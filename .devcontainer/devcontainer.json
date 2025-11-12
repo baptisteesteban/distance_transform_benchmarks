@@ -1,0 +1,9 @@
+{
+    "name": "Distance Transform Benchmarks",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--runtime=nvidia"
+    ]
+}
