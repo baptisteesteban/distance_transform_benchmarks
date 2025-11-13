@@ -7,7 +7,8 @@ RUN apt update -y && \
     gcc \
     g++ \
     gdb \
-    clangd && \
+    clangd \
+    libgtest-dev && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace

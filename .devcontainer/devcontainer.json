@@ -13,7 +13,12 @@
                 "llvm-vs-code-extensions.vscode-clangd",
                 "ms-vscode.cmake-tools",
                 "NVIDIA.nsight-vscode-edition"
-            ]
+            ],
+            "settings": {
+                "clangd.arguments": [
+                    "--compile-commands-dir=build/Debug"
+                ]
+            }
         }
     }
 }

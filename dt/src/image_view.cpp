@@ -4,7 +4,7 @@
 
 namespace dt
 {
-  Image2DView<void>::Image2DView() noexcept
+  image2d_view<void>::image2d_view() noexcept
     : m_buffer(nullptr)
     , m_width(0)
     , m_height(0)
@@ -12,7 +12,7 @@ namespace dt
   {
   }
 
-  Image2DView<void>::Image2DView(std::uint8_t* buffer, int width, int height, int pitch) noexcept
+  image2d_view<void>::image2d_view(std::uint8_t* buffer, int width, int height, int pitch) noexcept
     : m_buffer(buffer)
     , m_width(width)
     , m_height(height)
@@ -21,7 +21,7 @@ namespace dt
   }
 
 
-  Image2DView<void>::Image2DView(const Image2DView<void>& other) noexcept
+  image2d_view<void>::image2d_view(const image2d_view<void>& other) noexcept
     : m_buffer(other.m_buffer)
     , m_width(other.m_width)
     , m_height(other.m_height)
@@ -29,7 +29,7 @@ namespace dt
   {
   }
 
-  Image2DView<void>::Image2DView(Image2DView<void>&& other) noexcept
+  image2d_view<void>::image2d_view(image2d_view<void>&& other) noexcept
     : m_buffer(nullptr)
     , m_width(other.m_width)
     , m_height(other.m_height)
@@ -38,7 +38,7 @@ namespace dt
     std::swap(m_buffer, other.m_buffer);
   }
 
-  Image2DView<void>& Image2DView<void>::operator=(const Image2DView<void>& other) noexcept
+  image2d_view<void>& image2d_view<void>::operator=(const image2d_view<void>& other) noexcept
   {
     m_buffer = other.m_buffer;
     m_width  = other.m_width;
@@ -47,7 +47,7 @@ namespace dt
     return *this;
   }
 
-  Image2DView<void>& Image2DView<void>::operator=(Image2DView<void>&& other) noexcept
+  image2d_view<void>& image2d_view<void>::operator=(image2d_view<void>&& other) noexcept
   {
     std::swap(m_buffer, other.m_buffer);
     m_width  = other.m_width;
