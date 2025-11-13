@@ -36,4 +36,19 @@ TEST(Image2DView, argument_constructor_and_assignment_operators)
   ASSERT_EQ(img3.height(), 2);
   ASSERT_EQ(img3.pitch(), 3);
   ASSERT_NE(img3.buffer(), nullptr);
+
+  // Copy assignment
+  auto img4 = img;
+  ASSERT_EQ(img4.width(), 3);
+  ASSERT_EQ(img4.height(), 2);
+  ASSERT_EQ(img4.pitch(), 3);
+  ASSERT_NE(img4.buffer(), nullptr);
+
+  // Move assignment
+  auto img5 = std::move(img4);
+  ASSERT_EQ(img4.buffer(), nullptr);
+  ASSERT_EQ(img5.width(), 3);
+  ASSERT_EQ(img5.height(), 2);
+  ASSERT_EQ(img5.pitch(), 3);
+  ASSERT_NE(img5.buffer(), nullptr);
 }

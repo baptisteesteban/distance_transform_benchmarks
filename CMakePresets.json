@@ -39,5 +39,14 @@
             "description": "Release build of the project",
             "configurePreset": "release"
         }
+    ],
+    "testPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
     ]
 }
