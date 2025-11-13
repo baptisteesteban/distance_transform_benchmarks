@@ -9,7 +9,7 @@
 namespace dt::details
 {
   template <typename T>
-  struct image2d_data_cpu final : public image2d_data<T>
+  struct image2d_data_cpu final : public image2d_data
   {
     image2d_data_cpu(int width, int height);
     virtual ~image2d_data_cpu();
@@ -26,7 +26,7 @@ namespace dt::details
     if (!buffer)
       throw std::runtime_error("Unable to allocate buffer");
     this->m_buffer = buffer;
-    this->m_pitch  = width;
+    this->m_pitch  = width * sizeof(T);
   }
 
   template <typename T>

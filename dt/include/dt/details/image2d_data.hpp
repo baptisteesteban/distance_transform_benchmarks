@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cstdint>
+
 namespace dt::details
 {
-  template <typename T>
   class image2d_data
   {
   public:
@@ -11,43 +12,33 @@ namespace dt::details
     image2d_data& operator=(const image2d_data&) = delete;
     image2d_data& operator=(image2d_data&&)      = delete;
 
-    T*       buffer() noexcept;
-    const T* buffer() const noexcept;
-    int      pitch() const noexcept;
+    std::uint8_t*       buffer() noexcept;
+    const std::uint8_t* buffer() const noexcept;
+    int                 pitch() const noexcept;
 
   protected:
     image2d_data();
 
   protected:
-    T*  m_buffer;
-    int m_pitch;
+    std::uint8_t* m_buffer;
+    int           m_pitch;
   };
 
   /*
    * Implementations
    */
 
-  template <typename T>
-  image2d_data<T>::image2d_data()
-    : m_buffer(nullptr)
-    , m_pitch(0)
-  {
-  }
-
-  template <typename T>
-  inline T* image2d_data<T>::buffer() noexcept
+  inline std::uint8_t* image2d_data::buffer() noexcept
   {
     return m_buffer;
   }
 
-  template <typename T>
-  inline const T* image2d_data<T>::buffer() const noexcept
+  inline const std::uint8_t* image2d_data::buffer() const noexcept
   {
     return m_buffer;
   }
 
-  template <typename T>
-  inline int image2d_data<T>::pitch() const noexcept
+  inline int image2d_data::pitch() const noexcept
   {
     return m_pitch;
   }

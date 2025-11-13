@@ -15,7 +15,7 @@ namespace dt
     image2d(int width, int height);
 
   private:
-    std::shared_ptr<details::image2d_data<T>> m_data;
+    std::shared_ptr<details::image2d_data> m_data;
   };
 
   /*
