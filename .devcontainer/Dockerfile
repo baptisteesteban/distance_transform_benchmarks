@@ -2,12 +2,11 @@ FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
 
 RUN apt update -y && \
     apt install -y --no-install-recommends \
-        git \
-        cmake \
-        ninja-build \
-        gcc \
-        g++ \
-        gdb && \
+    cmake \
+    ninja-build \
+    gcc \
+    g++ \
+    gdb && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
