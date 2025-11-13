@@ -6,7 +6,8 @@ RUN apt update -y && \
     ninja-build \
     gcc \
     g++ \
-    gdb && \
+    gdb \
+    clangd && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
