@@ -1,5 +1,6 @@
 #include <iostream>
 
-int main(void) {
-    std::cout << "Hello\n";
+int main(void)
+{
+  std::cout << "Hello\n";
 }
