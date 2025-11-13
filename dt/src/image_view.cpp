@@ -9,6 +9,7 @@ namespace dt
     , m_width(0)
     , m_height(0)
     , m_pitch(0)
+    , m_elem_size(0)
   {
   }
 

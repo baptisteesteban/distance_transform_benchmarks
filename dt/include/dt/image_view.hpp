@@ -112,13 +112,13 @@ namespace dt
 
   inline std::uint8_t* image2d_view<void>::operator()(int x, int y) noexcept
   {
-    assert(in_domain(x, y));
+    assert(in_domain(x, y) && m_buffer);
     return m_buffer + (y * m_pitch + x * m_elem_size);
   }
 
   inline const std::uint8_t* image2d_view<void>::operator()(int x, int y) const noexcept
   {
-    assert(in_domain(x, y));
+    assert(in_domain(x, y) && m_buffer);
     return m_buffer + (y * m_pitch + x * m_elem_size);
   }
 
@@ -165,7 +165,7 @@ namespace dt
   template <typename T>
   const T& image2d_view<T>::operator()(int x, int y) const noexcept
   {
-    assert(in_domain(x, y));
+    assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<T*>(p);
   }
@@ -173,7 +173,7 @@ namespace dt
   template <typename T>
   T& image2d_view<T>::operator()(int x, int y) noexcept
   {
-    assert(in_domain(x, y));
+    assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<T*>(p);
   }

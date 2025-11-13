@@ -7,3 +7,4 @@ function(my_add_test name)
 endfunction()
 
 my_add_test(image_view)
+my_add_test(image2d)
