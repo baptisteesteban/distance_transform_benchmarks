@@ -131,7 +131,7 @@ namespace dt
 
   template <typename T>
   image2d_view<T>::image2d_view(T* buffer, int width, int height, int pitch) noexcept
-    : image2d_view<void>(reinterpret_cast<std::uint8_t*>(buffer), width, height, pitch, sizeof(T))
+    : image2d_view<void>((std::uint8_t*)buffer, width, height, pitch, sizeof(T))
   {
   }
 
@@ -167,7 +167,7 @@ namespace dt
   {
     assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
-    return *reinterpret_cast<T*>(p);
+    return *reinterpret_cast<const T*>(p);
   }
 
   template <typename T>
