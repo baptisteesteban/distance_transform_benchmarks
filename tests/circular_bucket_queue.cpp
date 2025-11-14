@@ -8,8 +8,8 @@ TEST(Structures, CircularBucketQueue)
   using namespace dt;
 
   auto q = structures::CircularBucketQueue();
-  q.push(3, 0, 0);
-  q.push(0, 1, 0);
+  q.push(3, point2d{0, 0});
+  q.push(0, point2d{1, 0});
   ASSERT_EQ(q.size(), 2);
 
   const auto [d1, p1] = q.pop();
@@ -24,7 +24,7 @@ TEST(Structures, CircularBucketQueue)
   ASSERT_EQ(d2, 3);
   ASSERT_EQ(p2, point2d(0, 0));
 
-  q.push(8, 2, 0);
+  q.push(8, point2d{2, 0});
   ASSERT_FALSE(q.empty());
   ASSERT_EQ(q.size(), 1);
 
