@@ -2,6 +2,7 @@
 #include <dt/immersion.hpp>
 #include <dt/imread.hpp>
 #include <dt/imsave.hpp>
+#include <dt/inferno.hpp>
 #include <dt/normalize.hpp>
 #include <dt/propagation.hpp>
 
@@ -20,8 +21,9 @@ int main(int argc, char* argv[])
   auto [m, M]   = dt::immersion(bordered);
   auto dt       = dt::propagation<std::uint16_t>(m, M);
   auto norm     = dt::normalize<std::uint8_t>(dt);
+  auto colored  = dt::inferno(norm);
 
-  dt::imsave(argv[2], norm);
+  dt::imsave(argv[2], colored);
 
   return 0;
 }

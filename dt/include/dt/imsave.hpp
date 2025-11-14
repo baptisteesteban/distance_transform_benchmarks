@@ -25,13 +25,13 @@ namespace dt
     requires(std::same_as<std::remove_cvref_t<T>, std::uint8_t>)
   void imsave(const char* filename, const image2d_view<T>& img)
   {
-    impl::imsave(filename, img.buffer(), img.width(), img.height(), img.pitch());
+    impl::imsave<std::uint8_t>(filename, img.buffer(), img.width(), img.height(), img.pitch());
   }
 
   template <typename T>
     requires(std::same_as<std::remove_cvref_t<T>, rgb8>)
   void imsave(const char* filename, const image2d_view<T>& img)
   {
-    impl::imsave(filename, img.buffer(), img.width(), img.height(), img.pitch());
+    impl::imsave<rgb8>(filename, reinterpret_cast<const rgb8*>(img.buffer()), img.width(), img.height(), img.pitch());
   }
 } // namespace dt

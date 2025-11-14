@@ -13,7 +13,9 @@ namespace dt::impl
     if (!std::string_view(filename).ends_with(".png"))
       throw std::invalid_argument("Only PNG output is supported");
 
-    stbi_write_png(filename, width, height, 1, buffer, pitch);
+    int e = stbi_write_png(filename, width, height, 1, buffer, pitch);
+    if (!e)
+      throw std::runtime_error("Failed to save PNG");
   }
 
   template <>
@@ -22,6 +24,8 @@ namespace dt::impl
     if (!std::string_view(filename).ends_with(".png"))
       throw std::invalid_argument("Only PNG output is supported");
 
-    stbi_write_png(filename, width, height, 3, buffer, pitch);
+    int e = stbi_write_png(filename, width, height, 3, buffer, pitch);
+    if (!e)
+      throw std::runtime_error("Failed to save PNG");
   }
 } // namespace dt::impl
