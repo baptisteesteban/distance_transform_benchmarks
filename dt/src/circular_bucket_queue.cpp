@@ -12,10 +12,10 @@ namespace dt::structures
   {
   }
 
-  void CircularBucketQueue::push(std::uint8_t d, int x, int y)
+  void CircularBucketQueue::push(std::uint8_t d, const point2d& p)
   {
     const int ind = (m_cur + d) % 256;
-    m_queues[ind].emplace_back(x, y);
+    m_queues[ind].emplace_back(p);
     m_size += 1;
   }
 

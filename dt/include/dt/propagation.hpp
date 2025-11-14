@@ -1,5 +1,8 @@
 #pragma once
 
+#include "dt/c4.hpp"
+#include "dt/point2d.hpp"
+#include <algorithm>
 #include <dt/image2d.hpp>
 #include <dt/image_view.hpp>
 #include <dt/structures/circular_bucket_queue.hpp>
@@ -24,6 +27,27 @@ namespace dt
     structures::CircularBucketQueue q;
 
     // First value (chosen as being a point of the image border)
+    const auto root = point2d{0, 0};
+    q.push(0, root);
+    out(root) = 0;
+    F(root)   = m(root);
+
+    // Propagation
+    while (!q.empty())
+    {
+      const auto [d, p] = q.pop();
+      for (const auto& n : c4(p))
+      {
+        if (!out.in_domain(n) || out(n) != UNVISITED)
+          continue;
+
+        auto         f     = std::clamp(F(p), m(n), M(n));
+        std::uint8_t delta = std::abs(static_cast<std::int16_t>(f) - F(p));
+        q.push(delta, n);
+        out(n) = d + delta;
+        F(n)   = f;
+      }
+    }
   }
 
   template <typename T, typename O>

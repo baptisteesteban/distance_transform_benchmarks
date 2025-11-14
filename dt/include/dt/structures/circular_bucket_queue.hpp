@@ -15,7 +15,7 @@ namespace dt::structures
     CircularBucketQueue& operator=(const CircularBucketQueue&) = delete;
     CircularBucketQueue& operator=(CircularBucketQueue&&)      = delete;
 
-    void                              push(std::uint8_t d, int x, int y);
+    void                              push(std::uint8_t d, const point2d& p);
     std::pair<std::uint16_t, point2d> pop();
     int                               size() const noexcept;
     bool                              empty() const noexcept;
