@@ -20,5 +20,8 @@
                 ]
             }
         }
-    }
+    },
+    "mounts": [
+        "source=${localEnv:HOME}/Pictures,target=/data,type=bind,consistency=cached"
+    ]
 }

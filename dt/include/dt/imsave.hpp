@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dt/image_view.hpp>
+#include <dt/rgb.hpp>
 
 #include <concepts>
 #include <type_traits>
@@ -22,6 +23,13 @@ namespace dt
 
   template <typename T>
     requires(std::same_as<std::remove_cvref_t<T>, std::uint8_t>)
+  void imsave(const char* filename, const image2d_view<T>& img)
+  {
+    impl::imsave(filename, img.buffer(), img.width(), img.height(), img.pitch());
+  }
+
+  template <typename T>
+    requires(std::same_as<std::remove_cvref_t<T>, rgb8>)
   void imsave(const char* filename, const image2d_view<T>& img)
   {
     impl::imsave(filename, img.buffer(), img.width(), img.height(), img.pitch());

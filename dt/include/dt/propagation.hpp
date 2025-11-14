@@ -50,7 +50,7 @@ namespace dt
     }
   }
 
-  template <typename T, typename O>
+  template <typename O, typename T>
   image2d<O> propagation(const image2d<T>& m, const image2d<T>& M)
   {
     image2d<O> out(m.width(), m.height());

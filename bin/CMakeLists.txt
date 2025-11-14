@@ -1,2 +1,2 @@
-add_executable(main main.cpp)
-target_link_directories(main PRIVATE dt)
+add_executable(level_lines_distance_transform_propagation level_lines_distance_transform_propagation.cpp)
+target_link_libraries(level_lines_distance_transform_propagation PRIVATE dt)

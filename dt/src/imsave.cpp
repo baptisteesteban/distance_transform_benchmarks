@@ -15,4 +15,13 @@ namespace dt::impl
 
     stbi_write_png(filename, width, height, 1, buffer, pitch);
   }
+
+  template <>
+  void imsave<rgb8>(const char* filename, const rgb8* buffer, int width, int height, int pitch)
+  {
+    if (!std::string_view(filename).ends_with(".png"))
+      throw std::invalid_argument("Only PNG output is supported");
+
+    stbi_write_png(filename, width, height, 3, buffer, pitch);
+  }
 } // namespace dt::impl
