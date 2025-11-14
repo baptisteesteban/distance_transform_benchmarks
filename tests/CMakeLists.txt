@@ -8,3 +8,4 @@ endfunction()
 
 my_add_test(image_view)
 my_add_test(image2d)
+my_add_test(circular_bucket_queue)
