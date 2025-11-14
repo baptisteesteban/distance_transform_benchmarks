@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dt/point2d.hpp>
+
 #include <cassert>
 #include <cstdint>
 #include <utility>
@@ -34,10 +36,13 @@ namespace dt
     // Check
     bool valid() const noexcept;
     bool in_domain(int x, int y) const noexcept;
+    bool in_domain(const point2d& p) const noexcept;
 
     // Accessor
     std::uint8_t*       operator()(int x, int y) noexcept;
     const std::uint8_t* operator()(int x, int y) const noexcept;
+    std::uint8_t*       operator()(const point2d& p) noexcept;
+    const std::uint8_t* operator()(const point2d& p) const noexcept;
 
   protected:
     std::uint8_t* m_buffer;
@@ -64,6 +69,8 @@ namespace dt
     // Accessors
     const T& operator()(int x, int y) const noexcept;
     T&       operator()(int x, int y) noexcept;
+    const T& operator()(const point2d& p) const noexcept;
+    T&       operator()(const point2d& p) noexcept;
   };
 
   /*
@@ -110,6 +117,11 @@ namespace dt
     return x >= 0 && y >= 0 && x < m_width && y < m_height;
   }
 
+  inline bool image2d_view<void>::in_domain(const point2d& p) const noexcept
+  {
+    return in_domain(p.x(), p.y());
+  }
+
   inline std::uint8_t* image2d_view<void>::operator()(int x, int y) noexcept
   {
     assert(in_domain(x, y) && m_buffer);
@@ -120,6 +132,18 @@ namespace dt
   {
     assert(in_domain(x, y) && m_buffer);
     return m_buffer + (y * m_pitch + x * m_elem_size);
+  }
+
+  inline std::uint8_t* image2d_view<void>::operator()(const point2d& p) noexcept
+  {
+    assert(in_domain(p));
+    return (*this)(p.x(), p.y());
+  }
+
+  inline const std::uint8_t* image2d_view<void>::operator()(const point2d& p) const noexcept
+  {
+    assert(in_domain(p));
+    return (*this)(p.x(), p.y());
   }
 
 
@@ -176,5 +200,19 @@ namespace dt
     assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<T*>(p);
+  }
+
+  template <typename T>
+  const T& image2d_view<T>::operator()(const point2d& p) const noexcept
+  {
+    assert(in_domain(p));
+    return (*this)(p.x(), p.y());
+  }
+
+  template <typename T>
+  T& image2d_view<T>::operator()(const point2d& p) noexcept
+  {
+    assert(in_domain(p));
+    return (*this)(p.x(), p.y());
   }
 } // namespace dt
