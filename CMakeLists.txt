@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(distance_transform_benchmark CXX)
+project(distance_transform_benchmark C CXX)
 
 option(BUILD_TESTING "Build the tests of the package" OFF)
 
