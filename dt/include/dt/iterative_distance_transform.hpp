@@ -1,8 +1,10 @@
 #pragma once
 
 #include <dt/border.hpp>
+#include <dt/fill.hpp>
 #include <dt/image2d.hpp>
 
+#include <limits>
 #include <ranges>
 #include <type_traits>
 
@@ -76,10 +78,13 @@ namespace dt
   template <typename T, typename O>
   void iterative_distance_transform(const image2d_view<T>& m, const image2d_view<T>& M, image2d_view<O>& D) noexcept
   {
-    using V = std::remove_cvref_t<T>;
+    using V                      = std::remove_cvref_t<T>;
+    static constexpr O UNVISITED = std::numeric_limits<O>::max();
+
+    fill(D, UNVISITED);
+    set_border(D, 0);
 
     image2d<V> F(m.width(), m.height());
-    set_border(D, 0);
     copy_border(m, F);
 
     bool changed = true;

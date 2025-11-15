@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dt/c4.hpp>
+#include <dt/fill.hpp>
 #include <dt/image2d.hpp>
 #include <dt/point2d.hpp>
 #include <dt/structures/circular_bucket_queue.hpp>
@@ -16,12 +17,7 @@ namespace dt
   {
     static constexpr O UNVISITED = std::numeric_limits<O>::max();
 
-    // Fill the distance with unvisited
-    for (int y = 0; y < out.height(); y++)
-    {
-      for (int x = 0; x < out.width(); x++)
-        out(x, y) = UNVISITED;
-    }
+    fill(out, UNVISITED);
     image2d<std::remove_cvref_t<T>> F(out.width(), out.height());
     structures::CircularBucketQueue q;
 
