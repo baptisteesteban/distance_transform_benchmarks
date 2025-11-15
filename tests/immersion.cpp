@@ -1,7 +1,7 @@
-#include "dt/image2d.hpp"
-#include <cstring>
-#include <dt/image_view.hpp>
+#include <dt/image2d.hpp>
 #include <dt/immersion.hpp>
+
+#include <cstring>
 
 #include <gtest/gtest.h>
 

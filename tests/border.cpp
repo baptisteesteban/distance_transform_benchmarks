@@ -1,7 +1,7 @@
-#include "dt/image_view.hpp"
-#include <cstring>
 #include <dt/border.hpp>
 #include <dt/image2d.hpp>
+
+#include <cstring>
 
 #include <gtest/gtest.h>
 

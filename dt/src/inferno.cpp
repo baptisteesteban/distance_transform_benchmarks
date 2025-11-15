@@ -1,4 +1,4 @@
-#include "dt/image2d.hpp"
+#include <dt/image2d.hpp>
 #include <dt/inferno.hpp>
 
 static constexpr dt::rgb8 inferno_mapping[] = {

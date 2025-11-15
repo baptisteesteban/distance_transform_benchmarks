@@ -1,10 +1,11 @@
 #pragma once
 
-#include "dt/image2d.hpp"
-#include "dt/image_view.hpp"
+#include <dt/image2d.hpp>
+
 #include <concepts>
 #include <limits>
 #include <type_traits>
+
 namespace dt
 {
   template <typename T, typename O>

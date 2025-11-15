@@ -1,7 +1,6 @@
 #pragma once
 
 #include <dt/image2d.hpp>
-#include <dt/image_view.hpp>
 
 #include <algorithm>
 #include <cassert>

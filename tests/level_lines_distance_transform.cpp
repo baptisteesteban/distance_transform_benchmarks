@@ -1,5 +1,4 @@
 #include <dt/image2d.hpp>
-#include <dt/image_view.hpp>
 #include <dt/immersion.hpp>
 #include <dt/propagation.hpp>
 

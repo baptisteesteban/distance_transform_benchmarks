@@ -1,8 +1,6 @@
-#include <dt/image_view.hpp>
+#include <dt/image2d_view.hpp>
 
 #include <gtest/gtest.h>
-
-#include <iostream>
 
 TEST(Image2DView, default_constructor)
 {
@@ -79,15 +77,6 @@ TEST(Image2DView, TypedView)
 {
   std::uint16_t    data[] = {5, 9, 7, 3, 4, 6};
   dt::image2d_view img(data, 3, 2, 6);
-
-  for (int y = 0; y < 2; y++)
-  {
-    for (int x = 0; x < 2; x++)
-    {
-      std::cout << img(x, y) << " ";
-    }
-    std::cout << img(2, y) << "\n";
-  }
 
   ASSERT_EQ(img.width(), 3);
   ASSERT_EQ(img.height(), 2);

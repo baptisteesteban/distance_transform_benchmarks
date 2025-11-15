@@ -1,8 +1,8 @@
 #pragma once
 
-#include "dt/details/image2d_data.hpp"
+#include <dt/details/image2d_data.hpp>
 #include <dt/details/image2d_data_cpu.hpp>
-#include <dt/image_view.hpp>
+#include <dt/image2d_view.hpp>
 
 #include <memory>
 

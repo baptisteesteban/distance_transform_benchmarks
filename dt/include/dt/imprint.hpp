@@ -1,6 +1,6 @@
 #pragma once
 
-#include <dt/image_view.hpp>
+#include <dt/image2d_view.hpp>
 
 #include <iostream>
 

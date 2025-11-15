@@ -1,12 +1,11 @@
 #pragma once
 
-#include "dt/c4.hpp"
-#include "dt/point2d.hpp"
-#include <algorithm>
+#include <dt/c4.hpp>
 #include <dt/image2d.hpp>
-#include <dt/image_view.hpp>
+#include <dt/point2d.hpp>
 #include <dt/structures/circular_bucket_queue.hpp>
 
+#include <algorithm>
 #include <limits>
 #include <type_traits>
 

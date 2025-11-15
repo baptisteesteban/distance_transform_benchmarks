@@ -4,7 +4,7 @@ add_library(dt)
 target_sources(dt PRIVATE
     src/circular_bucket_queue.cpp
     src/image2d_data.cpp
-    src/image_view.cpp
+    src/image2d_view.cpp
     src/imprint.cpp
     src/imread.cpp
     src/imsave.cpp
