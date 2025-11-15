@@ -2,6 +2,7 @@
 name = "dt"
 version = "0.1"
 authors = [{ name = "Baptiste Esteban", email = "baptiste.esteban@epita.fr" }]
+dependencies = ["torch>2"]
 
 [build-system]
 requires = ["pybind11", "scikit-build-core", "torch>2"]

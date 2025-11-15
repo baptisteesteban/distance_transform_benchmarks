@@ -3,3 +3,4 @@ build
 *.png
 dist
 .uv_cache
+.venv
