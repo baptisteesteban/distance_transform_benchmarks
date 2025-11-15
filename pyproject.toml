@@ -2,4 +2,15 @@
 name = "dt"
 version = "0.1"
 authors = [{ name = "Baptiste Esteban", email = "baptiste.esteban@epita.fr" }]
-dependencies = ["pytorch"]
+
+[build-system]
+requires = ["pybind11", "scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+wheel.packages = ["python/dt"]
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON="ON"
+BUILD_TESTING="OFF"

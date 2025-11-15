@@ -15,5 +15,3 @@ RUN apt update -y && \
 USER ubuntu
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-WORKDIR /workspace
