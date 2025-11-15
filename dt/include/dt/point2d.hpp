@@ -6,11 +6,11 @@ namespace dt
   {
   public:
     // Default constructors
-    constexpr point2d()                          = default;
-    constexpr point2d(const point2d&)            = default;
-    constexpr point2d(point2d&&)                 = default;
-    constexpr point2d& operator=(const point2d&) = default;
-    constexpr point2d& operator=(point2d&&)      = default;
+    constexpr point2d() noexcept                          = default;
+    constexpr point2d(const point2d&) noexcept            = default;
+    constexpr point2d(point2d&&) noexcept                 = default;
+    constexpr point2d& operator=(const point2d&) noexcept = default;
+    constexpr point2d& operator=(point2d&&) noexcept      = default;
 
     // Constructor
     constexpr point2d(int x, int y) noexcept;

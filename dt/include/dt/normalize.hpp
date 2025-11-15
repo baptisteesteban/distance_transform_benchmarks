@@ -12,7 +12,7 @@ namespace dt
   void normalize(const image2d_view<T>& in, image2d<O>& out) noexcept;
 
   template <typename O, typename T>
-  image2d<O> normalize(const image2d_view<T>& in) noexcept;
+  image2d<O> normalize(const image2d_view<T>& in);
 
   /*
    * Implementation
@@ -50,7 +50,7 @@ namespace dt
   }
 
   template <typename O, typename T>
-  image2d<O> normalize(const image2d_view<T>& in) noexcept
+  image2d<O> normalize(const image2d_view<T>& in)
   {
     image2d<O> out(in.width(), in.height());
     normalize(in, out);
