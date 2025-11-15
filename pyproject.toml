@@ -4,7 +4,7 @@ version = "0.1"
 authors = [{ name = "Baptiste Esteban", email = "baptiste.esteban@epita.fr" }]
 
 [build-system]
-requires = ["pybind11", "scikit-build-core"]
+requires = ["pybind11", "scikit-build-core", "torch>2"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
@@ -12,5 +12,5 @@ cmake.build-type = "Release"
 wheel.packages = ["python/dt"]
 
 [tool.scikit-build.cmake.define]
-BUILD_PYTHON="ON"
-BUILD_TESTING="OFF"
+BUILD_PYTHON = "ON"
+BUILD_TESTING = "OFF"
