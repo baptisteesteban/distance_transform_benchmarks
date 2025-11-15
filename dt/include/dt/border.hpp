@@ -13,6 +13,9 @@ namespace dt
   void set_border(image2d_view<T>& img, T val) noexcept;
 
   template <typename T, typename O = std::remove_cvref_t<T>>
+  void copy_border(const image2d_view<T>& img, image2d_view<O>& out) noexcept;
+
+  template <typename T, typename O = std::remove_cvref_t<T>>
   void add_border(const image2d_view<T>& img, image2d_view<O>& out, const T val) noexcept;
 
   template <typename T, typename O = std::remove_cvref_t<T>>
@@ -54,15 +57,38 @@ namespace dt
   template <typename T>
   void set_border(image2d_view<T>& img, T val) noexcept
   {
+    const int hm = img.height() - 1;
+    const int wm = img.width() - 1;
+
     for (int x = 0; x < img.width(); x++)
     {
-      img(x, 0)                = val;
-      img(x, img.height() - 1) = val;
+      img(x, 0)  = val;
+      img(x, hm) = val;
     }
     for (int y = 1; y < img.height() - 1; y++)
     {
-      img(0, y)               = val;
-      img(img.width() - 1, y) = val;
+      img(0, y)  = val;
+      img(wm, y) = val;
+    }
+  }
+
+  template <typename T, typename O>
+  void copy_border(const image2d_view<T>& img, image2d_view<O>& out) noexcept
+  {
+    assert(img.width() == out.width() && img.height() == out.height());
+
+    const int hm = img.height() - 1;
+    const int wm = img.width() - 1;
+
+    for (int x = 0; x < img.width(); x++)
+    {
+      out(x, 0)  = img(x, 0);
+      out(x, hm) = img(x, hm);
+    }
+    for (int y = 1; y < img.height() - 1; y++)
+    {
+      out(0, y)  = img(0, y);
+      out(wm, y) = img(wm, y);
     }
   }
 

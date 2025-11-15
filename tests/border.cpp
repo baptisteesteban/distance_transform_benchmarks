@@ -43,3 +43,24 @@ TEST(MedianBorder, Image2D)
       ASSERT_EQ(out(x, y), ref_data[y * 5 + x]);
   }
 }
+
+TEST(CopyBorder, Image2DView)
+{
+  static constexpr std::uint8_t ref_copy_data[] = {
+      3, 2,  5, //
+      7, 12, 6, //
+      2, 2,  8  //
+  };
+
+  std::uint8_t out_data[25];
+  std::memset(out_data, 12, 25);
+  const dt::image2d_view img(data, 3, 3, 3);
+  dt::image2d_view       out(out_data, 3, 3, 3);
+  dt::copy_border(img, out);
+
+  for (int y = 0; y < out.height(); y++)
+  {
+    for (int x = 0; x < out.width(); x++)
+      ASSERT_EQ(out(x, y), ref_copy_data[y * 3 + x]);
+  }
+}
