@@ -12,12 +12,16 @@
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
                 "ms-vscode.cmake-tools",
-                "NVIDIA.nsight-vscode-edition"
+                "NVIDIA.nsight-vscode-edition",
+                "ms-python.python",
+                "charliermarsh.ruff",
+                "tamasfe.even-better-toml"
             ],
             "settings": {
                 "clangd.arguments": [
                     "--compile-commands-dir=build/Debug"
-                ]
+                ],
+                "editor.formatOnSave": true
             }
         }
     },

@@ -1,0 +1,5 @@
+[project]
+name = "dt"
+version = "0.1"
+authors = [{ name = "Baptiste Esteban", email = "baptiste.esteban@epita.fr" }]
+dependencies = ["pytorch"]
