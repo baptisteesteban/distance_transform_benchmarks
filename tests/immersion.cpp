@@ -49,6 +49,11 @@ TEST(Immersion, Image2D)
   dt::image2d<std::uint8_t> img(3, 3);
   std::memcpy(img.buffer(), data, img.width() * img.height());
   auto [m, M] = dt::immersion(img);
+
+  ASSERT_EQ(m.width(), 5);
+  ASSERT_EQ(m.height(), 5);
+  ASSERT_EQ(m.width(), M.width());
+  ASSERT_EQ(m.height(), M.height());
   for (int y = 0; y < m.height(); y++)
   {
     for (int x = 0; x < m.width(); x++)

@@ -51,7 +51,7 @@ namespace dt
   }
 
   template <typename O, typename T>
-  image2d<O> propagation(const image2d<T>& m, const image2d<T>& M)
+  image2d<O> propagation(const image2d_view<T>& m, const image2d_view<T>& M)
   {
     image2d<O> out(m.width(), m.height());
     propagation<T, O>(m, M, out);

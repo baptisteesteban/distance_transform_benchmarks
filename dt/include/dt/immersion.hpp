@@ -60,7 +60,7 @@ namespace dt
   }
 
   template <typename T, typename O = std::remove_cvref_t<T>>
-  std::pair<image2d<O>, image2d<O>> immersion(const image2d<T>& img)
+  std::pair<image2d<O>, image2d<O>> immersion(const image2d_view<T>& img)
   {
     int        W = 2 * img.width() - 1;
     int        H = 2 * img.height() - 1;
