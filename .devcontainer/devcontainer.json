@@ -27,5 +27,8 @@
     },
     "mounts": [
         "source=${localEnv:HOME}/Pictures,target=/data,type=bind,consistency=cached"
-    ]
+    ],
+    "containerEnv": {
+        "UV_CACHE_DIR": "/workspaces/dist_benchmarks/.uv_cache"
+    }
 }
