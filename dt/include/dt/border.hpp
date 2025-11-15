@@ -10,26 +10,63 @@
 namespace dt
 {
   template <typename T>
-  T get_median_border_value(const image2d_view<T>& img) noexcept
+  void set_border(image2d_view<T>& img, T val) noexcept;
+
+  template <typename T, typename O = std::remove_cvref_t<T>>
+  void add_border(const image2d_view<T>& img, image2d_view<O>& out, const T val) noexcept;
+
+  template <typename T, typename O = std::remove_cvref_t<T>>
+  image2d<O> add_border(const image2d<T>& img, const T val);
+
+  template <typename T, typename O = std::remove_cvref_t<T>>
+  void add_median_border(const image2d_view<T>& img, image2d_view<O>& out) noexcept;
+
+  template <typename T, typename O = std::remove_cvref_t<T>>
+  image2d<O> add_median_border(const image2d<T>& img);
+
+  /*
+   * Implementations
+   */
+
+  namespace details
   {
-    const int N             = 2 * (img.width() + img.height() - 2);
-    auto      border_values = std::make_unique_for_overwrite<std::remove_cvref_t<T>[]>(N);
-    int       i             = 0;
+    template <typename T>
+    T get_median_border_value(const image2d_view<T>& img) noexcept
+    {
+      const int N             = 2 * (img.width() + img.height() - 2);
+      auto      border_values = std::make_unique_for_overwrite<std::remove_cvref_t<T>[]>(N);
+      int       i             = 0;
+      for (int x = 0; x < img.width(); x++)
+      {
+        border_values[i++] = img(x, 0);
+        border_values[i++] = img(x, img.height() - 1);
+      }
+      for (int y = 1; y < img.height() - 1; y++)
+      {
+        border_values[i++] = img(0, y);
+        border_values[i++] = img(img.width() - 1, y);
+      }
+      std::sort(border_values.get(), border_values.get() + N);
+      return border_values[(N - 1) / 2];
+    }
+  } // namespace details
+
+  template <typename T>
+  void set_border(image2d_view<T>& img, T val) noexcept
+  {
     for (int x = 0; x < img.width(); x++)
     {
-      border_values[i++] = img(x, 0);
-      border_values[i++] = img(x, img.height() - 1);
+      img(x, 0)                = val;
+      img(x, img.height() - 1) = val;
     }
     for (int y = 1; y < img.height() - 1; y++)
     {
-      border_values[i++] = img(0, y);
-      border_values[i++] = img(img.width() - 1, y);
+      img(0, y)               = val;
+      img(img.width() - 1, y) = val;
     }
-    std::sort(border_values.get(), border_values.get() + N);
-    return border_values[(N - 1) / 2];
   }
 
-  template <typename T, typename O = std::remove_cvref_t<T>>
+  template <typename T, typename O>
   void add_border(const image2d_view<T>& img, image2d_view<O>& out, const T val) noexcept
   {
     assert(out.width() == img.width() + 2 && out.height() == img.height() + 2);
@@ -41,19 +78,10 @@ namespace dt
     }
 
     // Border
-    for (int x = 0; x < out.width(); x++)
-    {
-      out(x, 0)                = val;
-      out(x, out.height() - 1) = val;
-    }
-    for (int y = 1; y < out.height() - 1; y++)
-    {
-      out(0, y)               = val;
-      out(out.width() - 1, y) = val;
-    }
+    set_border(out, val);
   }
 
-  template <typename T, typename O = std::remove_cvref_t<T>>
+  template <typename T, typename O>
   image2d<O> add_border(const image2d<T>& img, const T val)
   {
     image2d<O> out(img.width() + 2, img.height() + 2);
@@ -61,17 +89,17 @@ namespace dt
     return out;
   }
 
-  template <typename T, typename O = std::remove_cvref_t<T>>
+  template <typename T, typename O>
   void add_median_border(const image2d_view<T>& img, image2d_view<O>& out) noexcept
   {
-    const auto v = get_median_border_value(img);
+    const auto v = details::get_median_border_value(img);
     add_border<T, O>(img, out, v);
   }
 
-  template <typename T, typename O = std::remove_cvref_t<T>>
+  template <typename T, typename O>
   image2d<O> add_median_border(const image2d<T>& img)
   {
-    const auto v = get_median_border_value(img);
+    const auto v = details::get_median_border_value(img);
     return add_border<T, O>(img, v);
   }
 } // namespace dt
