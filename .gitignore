@@ -4,3 +4,5 @@ build
 dist
 .uv_cache
 .venv
+**/.ipynb_checkpoints
+**/__pycache__

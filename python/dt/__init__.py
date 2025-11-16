@@ -1,1 +1,1 @@
-from .dt_cxx import test
+from ._dt_cxx import test
