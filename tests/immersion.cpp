@@ -75,7 +75,7 @@ TEST(Immersion, Image2DGPU)
 
 TEST(Immersion, Image2DGPUSharedMemory)
 {
-  constexpr int WIDTH = 16, HEIGHT = 16;
+  constexpr int WIDTH = 200, HEIGHT = 200;
   auto          img         = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   const auto [m_ref, M_ref] = dt::immersion(img);
   auto d_img                = dt::host_to_device(img);

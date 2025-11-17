@@ -68,7 +68,7 @@ namespace dt
       // Fill input tile
       s_in[tx][ty] = in[y * in_pitch + x];
       if (tx == BLOCK_WIDTH - 1 && x < width - 1)
-        s_in[BLOCK_WIDTH][tx] = in[y * in_pitch + x + 1];
+        s_in[BLOCK_WIDTH][ty] = in[y * in_pitch + x + 1];
       if (ty == BLOCK_HEIGHT - 1 && y < height - 1)
         s_in[tx][BLOCK_HEIGHT] = in[(y + 1) * in_pitch + x];
       if (tx == BLOCK_WIDTH - 1 && ty == BLOCK_HEIGHT - 1 && x < width - 1 && y < height - 1)
