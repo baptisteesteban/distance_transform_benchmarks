@@ -6,6 +6,9 @@
 
 namespace dt
 {
+  static constexpr int BLOCK_WIDTH  = 16;
+  static constexpr int BLOCK_HEIGHT = 16;
+
   __device__ std::uint8_t min(const std::uint8_t a, const std::uint8_t b)
   {
     return a > b ? b : a;
@@ -48,6 +51,52 @@ namespace dt
     }
   }
 
+  __global__ void immersion_shared_kernel(const std::uint8_t* in, int in_pitch, std::uint8_t* m, std::uint8_t* M,
+                                          int out_pitch, int width, int height)
+  {
+    const int  tx = threadIdx.x;
+    const int  ty = threadIdx.y;
+    const int  x  = BLOCK_WIDTH * blockIdx.x + tx;
+    const int  y  = BLOCK_HEIGHT * blockIdx.y + ty;
+    const int  kx = 2 * x;
+    const int  ky = 2 * y;
+    __shared__ std::uint8_t s_in[BLOCK_WIDTH + 1][BLOCK_HEIGHT + 1];
+
+    if (x < width && y < height)
+    {
+      // Fill input tile
+      s_in[tx][ty] = in[y * in_pitch + x];
+      if (tx == BLOCK_WIDTH - 1 && x < width - 1)
+        s_in[BLOCK_WIDTH][tx] = in[y * in_pitch + x + 1];
+      if (ty == BLOCK_HEIGHT - 1 && y < height - 1)
+        s_in[tx][BLOCK_HEIGHT] = in[(y + 1) * in_pitch + x];
+      if (tx == BLOCK_WIDTH - 1 && ty == BLOCK_HEIGHT - 1 && x < width - 1 && y < height - 1)
+        s_in[BLOCK_WIDTH][BLOCK_HEIGHT] = in[(y + 1) * in_pitch + x + 1];
+      __syncthreads();
+
+
+      m[ky * out_pitch + kx] = s_in[tx][ty];
+      M[ky * out_pitch + kx] = s_in[tx][ty];
+      if (x < width - 1)
+      {
+        m[ky * out_pitch + (kx + 1)] = min(s_in[tx][ty], s_in[tx + 1][ty]);
+        M[ky * out_pitch + (kx + 1)] = max(s_in[tx][ty], s_in[tx + 1][ty]);
+      }
+      if (y < height - 1)
+      {
+        m[(ky + 1) * out_pitch + kx] = min(s_in[tx][ty], s_in[ty + 1][tx]);
+        M[(ky + 1) * out_pitch + kx] = max(s_in[tx][ty], s_in[ty + 1][tx]);
+      }
+      if (x < width - 1 && y < height - 1)
+      {
+        m[(ky + 1) * out_pitch + kx + 1] =
+            min(min(s_in[tx][ty], s_in[tx + 1][ty]), min(s_in[tx][ty + 1], s_in[tx + 1][ty + 1]));
+        M[(ky + 1) * out_pitch + kx + 1] =
+            max(max(s_in[tx][ty], s_in[tx + 1][ty]), max(s_in[tx][ty + 1], s_in[tx + 1][ty + 1]));
+      }
+    }
+  }
+
   void immersion_gpu(const image2d_view<std::uint8_t>& img, image2d_view<std::uint8_t>& m,
                      image2d_view<std::uint8_t>& M)
   {
@@ -56,8 +105,8 @@ namespace dt
     assert(m.width() == 2 * img.width() - 1 && m.height() == 2 * img.height() - 1 && m.width() == M.width() &&
            m.height() == M.height());
 
-    dim3 grid_dim((img.width() / 16) + 1, (img.height() / 16) + 1);
-    dim3 block_dim(16, 16);
+    dim3 grid_dim((img.width() / BLOCK_WIDTH) + 1, (img.height() / BLOCK_HEIGHT) + 1);
+    dim3 block_dim(BLOCK_WIDTH, BLOCK_HEIGHT);
     immersion_kernel<<<grid_dim, block_dim>>>(img.buffer(), img.pitch(), m.buffer(), M.buffer(), m.pitch(), img.width(),
                                               img.height());
     auto err = cudaGetLastError();
