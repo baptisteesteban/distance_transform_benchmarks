@@ -1,5 +1,7 @@
 find_package(CUDAToolkit REQUIRED)
 
+set(CMAKE_CUDA_ARCHITECTURES 75 80 90)
+
 add_library(dt-core)
 add_library(dt::core ALIAS dt-core)
 target_sources(dt-core PRIVATE

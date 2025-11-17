@@ -40,9 +40,9 @@ namespace dt
       }
       if (x < width - 1 && y < height - 1)
       {
-        m[(ky + 1) * out_pitch + kx + 1] = min(min(in[y * in_pitch + x], in[y * in_pitch + x] + 1),
+        m[(ky + 1) * out_pitch + kx + 1] = min(min(in[y * in_pitch + x], in[y * in_pitch + x + 1]),
                                                min(in[(y + 1) * in_pitch + x], in[(y + 1) * in_pitch + x + 1]));
-        M[(ky + 1) * out_pitch + kx + 1] = max(max(in[y * in_pitch + x], in[y * in_pitch + x] + 1),
+        M[(ky + 1) * out_pitch + kx + 1] = max(max(in[y * in_pitch + x], in[y * in_pitch + x + 1]),
                                                max(in[(y + 1) * in_pitch + x], in[(y + 1) * in_pitch + x + 1]));
       }
     }
@@ -68,10 +68,10 @@ namespace dt
   std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>> immersion_gpu(const image2d_view<std::uint8_t>& img)
   {
     assert(img.memory_kind() == e_memory_kind::GPU);
-    const int             kwidth  = 2 * img.width() + 1;
-    const int             kheight = 2 * img.height() + 1;
-    image2d<std::uint8_t> m(kwidth, kheight);
-    image2d<std::uint8_t> M(kwidth, kheight);
+    const int             kwidth  = 2 * img.width() - 1;
+    const int             kheight = 2 * img.height() - 1;
+    image2d<std::uint8_t> m(kwidth, kheight, e_memory_kind::GPU);
+    image2d<std::uint8_t> M(kwidth, kheight, e_memory_kind::GPU);
     immersion_gpu(img, m, M);
     return {m, M};
   }

@@ -68,7 +68,8 @@ TEST(Immersion, Image2D)
 
 TEST(Immersion, Image2DGPU)
 {
-  auto img                  = dt::random_image2d<std::uint8_t>(200, 200);
+  constexpr int WIDTH = 200, HEIGHT = 200;
+  auto          img         = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   const auto [m_ref, M_ref] = dt::immersion(img);
   auto d_img                = dt::host_to_device(img);
   const auto [d_m, d_M]     = dt::immersion_gpu(d_img);
