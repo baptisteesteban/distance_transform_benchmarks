@@ -1,4 +1,5 @@
 #include <dt/image2d.hpp>
+#include <dt/immersion.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -74,7 +75,6 @@ namespace dt
         s_in[BLOCK_WIDTH][BLOCK_HEIGHT] = in[(y + 1) * in_pitch + x + 1];
       __syncthreads();
 
-
       m[ky * out_pitch + kx] = s_in[tx][ty];
       M[ky * out_pitch + kx] = s_in[tx][ty];
       if (x < width - 1)
@@ -84,8 +84,8 @@ namespace dt
       }
       if (y < height - 1)
       {
-        m[(ky + 1) * out_pitch + kx] = min(s_in[tx][ty], s_in[ty + 1][tx]);
-        M[(ky + 1) * out_pitch + kx] = max(s_in[tx][ty], s_in[ty + 1][tx]);
+        m[(ky + 1) * out_pitch + kx] = min(s_in[tx][ty], s_in[tx][ty + 1]);
+        M[(ky + 1) * out_pitch + kx] = max(s_in[tx][ty], s_in[tx][ty + 1]);
       }
       if (x < width - 1 && y < height - 1)
       {
@@ -98,7 +98,7 @@ namespace dt
   }
 
   void immersion_gpu(const image2d_view<std::uint8_t>& img, image2d_view<std::uint8_t>& m,
-                     image2d_view<std::uint8_t>& M)
+                     image2d_view<std::uint8_t>& M, e_immersion_impl impl)
   {
     assert(img.memory_kind() == e_memory_kind::GPU && img.memory_kind() == m.memory_kind() &&
            img.memory_kind() == M.memory_kind());
@@ -107,21 +107,31 @@ namespace dt
 
     dim3 grid_dim((img.width() / BLOCK_WIDTH) + 1, (img.height() / BLOCK_HEIGHT) + 1);
     dim3 block_dim(BLOCK_WIDTH, BLOCK_HEIGHT);
-    immersion_kernel<<<grid_dim, block_dim>>>(img.buffer(), img.pitch(), m.buffer(), M.buffer(), m.pitch(), img.width(),
-                                              img.height());
+    switch (impl)
+    {
+    case e_immersion_impl::SHARED:
+      immersion_shared_kernel<<<grid_dim, block_dim>>>(img.buffer(), img.pitch(), m.buffer(), M.buffer(), m.pitch(),
+                                                       img.width(), img.height());
+      break;
+    case e_immersion_impl::GLOBAL:
+      immersion_kernel<<<grid_dim, block_dim>>>(img.buffer(), img.pitch(), m.buffer(), M.buffer(), m.pitch(),
+                                                img.width(), img.height());
+      break;
+    }
     auto err = cudaGetLastError();
     if (err != cudaSuccess)
       throw std::runtime_error(std::format("Unable to launch immersion cuda kernel: {}", cudaGetErrorString(err)));
   }
 
-  std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>> immersion_gpu(const image2d_view<std::uint8_t>& img)
+  std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>> immersion_gpu(const image2d_view<std::uint8_t>& img,
+                                                                        e_immersion_impl                  impl)
   {
     assert(img.memory_kind() == e_memory_kind::GPU);
     const int             kwidth  = 2 * img.width() - 1;
     const int             kheight = 2 * img.height() - 1;
     image2d<std::uint8_t> m(kwidth, kheight, e_memory_kind::GPU);
     image2d<std::uint8_t> M(kwidth, kheight, e_memory_kind::GPU);
-    immersion_gpu(img, m, M);
+    immersion_gpu(img, m, M, impl);
     return {m, M};
   }
 } // namespace dt

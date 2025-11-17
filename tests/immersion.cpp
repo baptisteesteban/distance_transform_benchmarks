@@ -1,5 +1,6 @@
 #include <dt/image2d.hpp>
 #include <dt/immersion.hpp>
+#include <dt/imprint.hpp>
 #include <dt/random_image2d.hpp>
 #include <dt/transfert.hpp>
 
@@ -61,6 +62,20 @@ TEST(Immersion, Image2D)
 TEST(Immersion, Image2DGPU)
 {
   constexpr int WIDTH = 200, HEIGHT = 200;
+  auto          img         = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
+  const auto [m_ref, M_ref] = dt::immersion(img);
+  auto d_img                = dt::host_to_device(img);
+  const auto [d_m, d_M]     = dt::immersion_gpu(d_img, dt::e_immersion_impl::GLOBAL);
+  const auto m              = dt::device_to_host(d_m);
+  const auto M              = dt::device_to_host(d_M);
+
+  ASSERT_IMAGES_EQ(m, m_ref);
+  ASSERT_IMAGES_EQ(M, M_ref);
+}
+
+TEST(Immersion, Image2DGPUSharedMemory)
+{
+  constexpr int WIDTH = 16, HEIGHT = 16;
   auto          img         = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   const auto [m_ref, M_ref] = dt::immersion(img);
   auto d_img                = dt::host_to_device(img);
