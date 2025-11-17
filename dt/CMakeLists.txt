@@ -8,6 +8,7 @@ target_sources(dt-core PRIVATE
     src/image2d_view.cpp
     src/imprint.cpp
     src/inferno.cpp
+    src/transfert.cpp
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)

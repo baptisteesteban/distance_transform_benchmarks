@@ -3,6 +3,8 @@
 #include <dt/details/image2d_data.hpp>
 
 #include <cuda_runtime.h>
+
+#include <format>
 #include <stdexcept>
 
 namespace dt::details
@@ -25,7 +27,7 @@ namespace dt::details
     std::size_t   pitch;
     auto          err = cudaMallocPitch(&buffer, &pitch, width * sizeof(T), height);
     if (err != cudaSuccess)
-      throw std::runtime_error("Unable to allocate GPU memory");
+      throw std::runtime_error(std::format("Unable to allocate GPU memory: {}", cudaGetErrorString(err)));
     this->m_buffer = buffer;
     this->m_pitch  = pitch;
   }
