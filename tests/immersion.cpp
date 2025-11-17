@@ -7,19 +7,21 @@
 
 #include <gtest/gtest.h>
 
+#include "helpers.hpp"
+
 static constexpr std::uint8_t data[] = {
     3, 2, 5, //
     7, 1, 6, //
     2, 2, 8  //
 };
-static constexpr std::uint8_t m_ref[] = {
+static constexpr std::uint8_t m_data_ref[] = {
     3, 2, 2, 2, 5, //
     3, 1, 1, 1, 5, //
     7, 1, 1, 1, 6, //
     2, 1, 1, 1, 6, //
     2, 2, 2, 2, 8  //
 };
-static constexpr std::uint8_t M_ref[] = {
+static constexpr std::uint8_t M_data_ref[] = {
     3, 3, 2, 5, 5, //
     7, 7, 2, 6, 6, //
     7, 7, 1, 6, 6, //
@@ -29,6 +31,9 @@ static constexpr std::uint8_t M_ref[] = {
 
 TEST(Immersion, Image2DView)
 {
+  const dt::image2d_view m_ref(m_data_ref, 5, 5, 5);
+  const dt::image2d_view M_ref(M_data_ref, 5, 5, 5);
+
   std::uint8_t     m_data[25];
   std::uint8_t     M_data[25];
   dt::image2d_view img(data, 3, 3, 3);
@@ -36,34 +41,21 @@ TEST(Immersion, Image2DView)
   dt::image2d_view M(M_data, 5, 5, 5);
   dt::immersion(img, m, M);
 
-  for (int y = 0; y < m.height(); y++)
-  {
-    for (int x = 0; x < m.width(); x++)
-    {
-      ASSERT_EQ(m(x, y), m_ref[y * 5 + x]);
-      ASSERT_EQ(M(x, y), M_ref[y * 5 + x]);
-    }
-  }
+  ASSERT_IMAGES_EQ(m, m_ref);
+  ASSERT_IMAGES_EQ(M, M_ref);
 }
 
 TEST(Immersion, Image2D)
 {
+  const dt::image2d_view m_ref(m_data_ref, 5, 5, 5);
+  const dt::image2d_view M_ref(M_data_ref, 5, 5, 5);
+
   dt::image2d<std::uint8_t> img(3, 3);
   std::memcpy(img.buffer(), data, img.width() * img.height());
   auto [m, M] = dt::immersion(img);
 
-  ASSERT_EQ(m.width(), 5);
-  ASSERT_EQ(m.height(), 5);
-  ASSERT_EQ(m.width(), M.width());
-  ASSERT_EQ(m.height(), M.height());
-  for (int y = 0; y < m.height(); y++)
-  {
-    for (int x = 0; x < m.width(); x++)
-    {
-      ASSERT_EQ(m(x, y), m_ref[y * 5 + x]);
-      ASSERT_EQ(M(x, y), M_ref[y * 5 + x]);
-    }
-  }
+  ASSERT_IMAGES_EQ(m, m_ref);
+  ASSERT_IMAGES_EQ(M, M_ref);
 }
 
 TEST(Immersion, Image2DGPU)
@@ -76,17 +68,6 @@ TEST(Immersion, Image2DGPU)
   const auto m              = dt::device_to_host(d_m);
   const auto M              = dt::device_to_host(d_M);
 
-  ASSERT_EQ(m.width(), m_ref.width());
-  ASSERT_EQ(m.height(), m_ref.height());
-  ASSERT_EQ(m.width(), M.width());
-  ASSERT_EQ(m.height(), M.height());
-
-  for (int y = 0; y < m.height(); y++)
-  {
-    for (int x = 0; x < m.width(); x++)
-    {
-      ASSERT_EQ(m(x, y), m_ref(x, y));
-      ASSERT_EQ(M(x, y), M_ref(x, y));
-    }
-  }
+  ASSERT_IMAGES_EQ(m, m_ref);
+  ASSERT_IMAGES_EQ(M, M_ref);
 }

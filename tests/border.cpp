@@ -1,9 +1,11 @@
 #include <dt/border.hpp>
 #include <dt/image2d.hpp>
 
+#include <gtest/gtest.h>
+
 #include <cstring>
 
-#include <gtest/gtest.h>
+#include "helpers.hpp"
 
 static constexpr std::uint8_t data[] = {
     3, 2, 5, //
@@ -21,27 +23,23 @@ static constexpr std::uint8_t ref_data[] = {
 
 TEST(MedianBorder, Image2DView)
 {
+  const dt::image2d_view ref_img(ref_data, 5, 5, 5);
+
   std::uint8_t           out_data[25];
   const dt::image2d_view img(data, 3, 3, 3);
   dt::image2d_view       out(out_data, 5, 5, 5);
   dt::add_median_border<const std::uint8_t>(img, out);
-  for (int y = 0; y < out.height(); y++)
-  {
-    for (int x = 0; x < out.width(); x++)
-      ASSERT_EQ(out(x, y), ref_data[y * 5 + x]);
-  }
+  ASSERT_IMAGES_EQ(out, ref_img);
 }
 
 TEST(MedianBorder, Image2D)
 {
+  const dt::image2d_view ref_img(ref_data, 5, 5, 5);
+
   dt::image2d<std::uint8_t> img(3, 3);
   std::memcpy(img.buffer(), data, img.width() * img.height());
   auto out = dt::add_median_border(img);
-  for (int y = 0; y < out.height(); y++)
-  {
-    for (int x = 0; x < out.width(); x++)
-      ASSERT_EQ(out(x, y), ref_data[y * 5 + x]);
-  }
+  ASSERT_IMAGES_EQ(out, ref_img);
 }
 
 TEST(CopyBorder, Image2DView)
@@ -51,16 +49,12 @@ TEST(CopyBorder, Image2DView)
       7, 12, 6, //
       2, 2,  8  //
   };
+  const dt::image2d_view ref_img(ref_copy_data, 3, 3, 3);
 
   std::uint8_t out_data[25];
   std::memset(out_data, 12, 25);
   const dt::image2d_view img(data, 3, 3, 3);
   dt::image2d_view       out(out_data, 3, 3, 3);
   dt::copy_border(img, out);
-
-  for (int y = 0; y < out.height(); y++)
-  {
-    for (int x = 0; x < out.width(); x++)
-      ASSERT_EQ(out(x, y), ref_copy_data[y * 3 + x]);
-  }
+  ASSERT_IMAGES_EQ(out, ref_img);
 }

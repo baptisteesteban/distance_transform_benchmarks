@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include "helpers.hpp"
+
 TEST(Io, uint8)
 {
   const std::uint8_t data[] = {10, 3, 5, 8, 1, 3, 0, 4, 10, 4};
@@ -10,14 +12,5 @@ TEST(Io, uint8)
   dt::imsave("test_tmp_io.png", in);
   auto out = dt::imread<std::uint8_t>("test_tmp_io.png");
 
-  ASSERT_EQ(in.width(), out.width());
-  ASSERT_EQ(in.height(), out.height());
-  ASSERT_EQ(in.pitch(), out.pitch());
-  ASSERT_EQ(in.elem_size(), out.elem_size());
-
-  for (int y = 0; y < in.height(); y++)
-  {
-    for (int x = 0; x < in.width(); x++)
-      ASSERT_EQ(in(x, y), out(x, y));
-  }
+  ASSERT_IMAGES_EQ(in, out);
 }

@@ -1,3 +1,4 @@
+#include "helpers.hpp"
 #include <dt/image2d.hpp>
 #include <dt/immersion.hpp>
 #include <dt/iterative_distance_transform.hpp>
@@ -13,7 +14,7 @@ static constexpr std::uint8_t data[] = {
     3, 3, 3, 3, 3  //
 };
 
-static constexpr std::uint16_t ref_D[] = {
+static constexpr std::uint16_t ref_D_data[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, //
     0, 0, 0, 0, 0, 0, 0, 0, 0, //
     0, 0, 0, 0, 1, 0, 2, 0, 0, //
@@ -27,30 +28,22 @@ static constexpr std::uint16_t ref_D[] = {
 
 TEST(LevelLinesDistanceTransform, Propagation)
 {
+  const dt::image2d_view ref_D(ref_D_data, 9, 9, 18);
+
   dt::image2d_view img(data, 5, 5, 5);
   const auto [m, M] = dt::immersion(img);
   const auto D      = dt::propagation<std::uint16_t>(m, M);
 
-  ASSERT_EQ(D.width(), 9);
-  ASSERT_EQ(D.height(), 9);
-  for (int y = 0; y < D.height(); y++)
-  {
-    for (int x = 0; x < D.width(); x++)
-      ASSERT_EQ(D(x, y), ref_D[y * 9 + x]);
-  }
+  ASSERT_IMAGES_EQ(D, ref_D);
 }
 
 TEST(LevelLinesDistanceTransform, Iterative)
 {
+  const dt::image2d_view ref_D(ref_D_data, 9, 9, 18);
+
   dt::image2d_view img(data, 5, 5, 5);
   const auto [m, M] = dt::immersion(img);
   const auto D      = dt::iterative_distance_transform<std::uint16_t>(m, M);
 
-  ASSERT_EQ(D.width(), 9);
-  ASSERT_EQ(D.height(), 9);
-  for (int y = 0; y < D.height(); y++)
-  {
-    for (int x = 0; x < D.width(); x++)
-      ASSERT_EQ(D(x, y), ref_D[y * 9 + x]);
-  }
+  ASSERT_IMAGES_EQ(D, ref_D);
 }
