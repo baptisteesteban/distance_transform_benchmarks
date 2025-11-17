@@ -11,7 +11,9 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_FLAGS": "-fsanitize=address",
-                "BUILD_TESTING": "ON"
+                "BUILD_TESTING": "ON",
+                "BUILD_BINARIES": "ON",
+                "BUILD_IO": "ON"
             }
         },
         {
@@ -21,7 +23,9 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/Release",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_BINARIES": "ON",
+                "BUILD_IO": "ON"
             }
         }
     ],
