@@ -8,6 +8,12 @@
 
 namespace dt
 {
+  enum class e_memory_kind
+  {
+    CPU,
+    GPU
+  };
+
   template <typename T>
   class image2d_view;
 
@@ -17,7 +23,8 @@ namespace dt
   public:
     // Constructors
     image2d_view() noexcept;
-    image2d_view(std::uint8_t* buffer, int width, int height, int pitch, int elem_size) noexcept;
+    image2d_view(std::uint8_t* buffer, int width, int height, int pitch, int elem_size,
+                 e_memory_kind memory_kind = e_memory_kind::CPU) noexcept;
     image2d_view(const image2d_view<void>& other) noexcept;
     image2d_view(image2d_view<void>&& other) noexcept;
 
@@ -32,6 +39,7 @@ namespace dt
     int                 elem_size() const noexcept;
     std::uint8_t*       buffer() noexcept;
     const std::uint8_t* buffer() const noexcept;
+    e_memory_kind       memory_kind() const noexcept;
 
     // Check
     bool valid() const noexcept;
@@ -50,6 +58,7 @@ namespace dt
     int           m_height;
     int           m_pitch;
     int           m_elem_size;
+    e_memory_kind m_memory_kind;
   };
 
   template <typename T>
@@ -58,7 +67,7 @@ namespace dt
   public:
     // Constructors
     image2d_view() noexcept;
-    image2d_view(T* buffer, int width, int height, int pitch) noexcept;
+    image2d_view(T* buffer, int width, int height, int pitch, e_memory_kind memory_kind = e_memory_kind::CPU) noexcept;
     image2d_view(const image2d_view<T>& other) noexcept;
     image2d_view(image2d_view<T>&& other) noexcept;
 
@@ -146,6 +155,10 @@ namespace dt
     return (*this)(p.x(), p.y());
   }
 
+  inline e_memory_kind image2d_view<void>::memory_kind() const noexcept
+  {
+    return m_memory_kind;
+  }
 
   template <typename T>
   image2d_view<T>::image2d_view() noexcept
@@ -154,8 +167,8 @@ namespace dt
   }
 
   template <typename T>
-  image2d_view<T>::image2d_view(T* buffer, int width, int height, int pitch) noexcept
-    : image2d_view<void>((std::uint8_t*)buffer, width, height, pitch, sizeof(T))
+  image2d_view<T>::image2d_view(T* buffer, int width, int height, int pitch, e_memory_kind memory_kind) noexcept
+    : image2d_view<void>((std::uint8_t*)buffer, width, height, pitch, sizeof(T), memory_kind)
   {
   }
 
@@ -189,7 +202,7 @@ namespace dt
   template <typename T>
   const T& image2d_view<T>::operator()(int x, int y) const noexcept
   {
-    assert(in_domain(x, y) && m_buffer);
+    assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<const T*>(p);
   }
@@ -197,7 +210,7 @@ namespace dt
   template <typename T>
   T& image2d_view<T>::operator()(int x, int y) noexcept
   {
-    assert(in_domain(x, y) && m_buffer);
+    assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<T*>(p);
   }
@@ -205,14 +218,12 @@ namespace dt
   template <typename T>
   const T& image2d_view<T>::operator()(const point2d& p) const noexcept
   {
-    assert(in_domain(p));
     return (*this)(p.x(), p.y());
   }
 
   template <typename T>
   T& image2d_view<T>::operator()(const point2d& p) noexcept
   {
-    assert(in_domain(p));
     return (*this)(p.x(), p.y());
   }
 } // namespace dt

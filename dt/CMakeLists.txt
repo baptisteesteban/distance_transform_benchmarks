@@ -1,3 +1,5 @@
+find_package(CUDAToolkit REQUIRED)
+
 add_library(dt-core)
 add_library(dt::core ALIAS dt-core)
 target_sources(dt-core PRIVATE
@@ -9,6 +11,7 @@ target_sources(dt-core PRIVATE
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)
+target_link_libraries(dt-core PUBLIC CUDA::cudart)
 
 if (BUILD_IO)
     add_library(dt-io)
