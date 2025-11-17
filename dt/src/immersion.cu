@@ -7,8 +7,8 @@
 
 namespace dt
 {
-  static constexpr int BLOCK_WIDTH  = 16;
-  static constexpr int BLOCK_HEIGHT = 16;
+  static constexpr int BLOCK_WIDTH  = 32;
+  static constexpr int BLOCK_HEIGHT = 32;
 
   __device__ std::uint8_t min(const std::uint8_t a, const std::uint8_t b)
   {
@@ -121,6 +121,7 @@ namespace dt
     auto err = cudaGetLastError();
     if (err != cudaSuccess)
       throw std::runtime_error(std::format("Unable to launch immersion cuda kernel: {}", cudaGetErrorString(err)));
+    cudaDeviceSynchronize();
   }
 
   std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>> immersion_gpu(const image2d_view<std::uint8_t>& img,

@@ -25,7 +25,8 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_BINARIES": "ON",
-                "BUILD_IO": "ON"
+                "BUILD_IO": "ON",
+                "BUILD_BENCHMARKS": "ON"
             }
         }
     ],
