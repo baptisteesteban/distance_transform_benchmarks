@@ -16,10 +16,10 @@ namespace dt
     constexpr point2d(int x, int y) noexcept;
 
     // Accessors
-    constexpr int&      x() noexcept;
-    constexpr const int x() const noexcept;
-    constexpr int&      y() noexcept;
-    constexpr const int y() const noexcept;
+    constexpr int& x() noexcept;
+    constexpr int  x() const noexcept;
+    constexpr int& y() noexcept;
+    constexpr int  y() const noexcept;
 
     // Comparison
     constexpr bool operator==(const point2d&) const noexcept;
@@ -51,7 +51,7 @@ namespace dt
     return m_x;
   }
 
-  inline constexpr const int point2d::x() const noexcept
+  inline constexpr int point2d::x() const noexcept
   {
     return m_x;
   }
@@ -61,7 +61,7 @@ namespace dt
     return m_y;
   }
 
-  inline constexpr const int point2d::y() const noexcept
+  inline constexpr int point2d::y() const noexcept
   {
     return m_y;
   }

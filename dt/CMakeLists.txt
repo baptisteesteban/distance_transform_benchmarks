@@ -9,6 +9,7 @@ target_sources(dt-core PRIVATE
     src/imprint.cpp
     src/inferno.cpp
     src/transfert.cpp
+    src/immersion.cu
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)

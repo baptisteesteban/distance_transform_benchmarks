@@ -1,5 +1,7 @@
 #include <dt/image2d.hpp>
 #include <dt/immersion.hpp>
+#include <dt/random_image2d.hpp>
+#include <dt/transfert.hpp>
 
 #include <cstring>
 
@@ -60,6 +62,30 @@ TEST(Immersion, Image2D)
     {
       ASSERT_EQ(m(x, y), m_ref[y * 5 + x]);
       ASSERT_EQ(M(x, y), M_ref[y * 5 + x]);
+    }
+  }
+}
+
+TEST(Immersion, Image2DGPU)
+{
+  auto img                  = dt::random_image2d<std::uint8_t>(200, 200);
+  const auto [m_ref, M_ref] = dt::immersion(img);
+  auto d_img                = dt::host_to_device(img);
+  const auto [d_m, d_M]     = dt::immersion_gpu(d_img);
+  const auto m              = dt::device_to_host(d_m);
+  const auto M              = dt::device_to_host(d_M);
+
+  ASSERT_EQ(m.width(), m_ref.width());
+  ASSERT_EQ(m.height(), m_ref.height());
+  ASSERT_EQ(m.width(), M.width());
+  ASSERT_EQ(m.height(), M.height());
+
+  for (int y = 0; y < m.height(); y++)
+  {
+    for (int x = 0; x < m.width(); x++)
+    {
+      ASSERT_EQ(m(x, y), m_ref(x, y));
+      ASSERT_EQ(M(x, y), M_ref(x, y));
     }
   }
 }
