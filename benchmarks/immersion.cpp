@@ -18,20 +18,11 @@ static void BM_Immersion_GPU_Global(benchmark::State& st)
   const auto _img = dt::imread<std::uint8_t>(INPUT_FILENAME);
   const auto img  = dt::host_to_device(_img);
   for (auto _ : st)
-    dt::immersion_gpu(img, dt::e_immersion_impl::GLOBAL);
-}
-
-static void BM_Immersion_GPU_Shared(benchmark::State& st)
-{
-  const auto _img = dt::imread<std::uint8_t>(INPUT_FILENAME);
-  const auto img  = dt::host_to_device(_img);
-  for (auto _ : st)
-    dt::immersion_gpu(img, dt::e_immersion_impl::SHARED);
+    dt::immersion_gpu(img);
 }
 
 BENCHMARK(BM_Immersion_CPU);
 BENCHMARK(BM_Immersion_GPU_Global);
-BENCHMARK(BM_Immersion_GPU_Shared);
 
 int main(int argc, char* argv[])
 {

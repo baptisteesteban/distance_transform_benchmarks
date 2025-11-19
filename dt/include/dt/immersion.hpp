@@ -9,11 +9,6 @@
 
 namespace dt
 {
-  enum class e_immersion_impl
-  {
-    GLOBAL,
-    SHARED
-  };
 
   template <typename T, typename O = std::remove_cvref_t<T>>
   void immersion(const image2d_view<T>& img, image2d_view<O>& m, image2d_view<O>& M);
@@ -22,10 +17,9 @@ namespace dt
   std::pair<image2d<O>, image2d<O>> immersion(const image2d_view<T>& img);
 
   void immersion_gpu(const image2d_view<std::uint8_t>& img, image2d_view<std::uint8_t>& m,
-                     image2d_view<std::uint8_t>& M, e_immersion_impl impl = e_immersion_impl::SHARED);
+                     image2d_view<std::uint8_t>& M);
 
-  std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>>
-  immersion_gpu(const image2d_view<std::uint8_t>& img, e_immersion_impl impl = e_immersion_impl::SHARED);
+  std::pair<image2d<std::uint8_t>, image2d<std::uint8_t>> immersion_gpu(const image2d_view<std::uint8_t>& img);
   /*
    * Implementations
    */
