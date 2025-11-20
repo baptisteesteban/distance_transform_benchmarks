@@ -2,3 +2,6 @@ find_package(benchmark REQUIRED)
 
 add_executable(bench_immersion immersion.cpp)
 target_link_libraries(bench_immersion PRIVATE dt::io benchmark::benchmark_main)
+
+add_executable(bench_level_lines_distance_transform level_lines_distance_transform.cpp)
+target_link_libraries(bench_level_lines_distance_transform PRIVATE dt::io benchmark::benchmark_main)
