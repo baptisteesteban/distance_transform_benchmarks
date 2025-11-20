@@ -25,7 +25,18 @@ namespace dt
     image2d_view() noexcept;
     image2d_view(std::uint8_t* buffer, int width, int height, int pitch, int elem_size,
                  e_memory_kind memory_kind = e_memory_kind::CPU) noexcept;
-    image2d_view(const image2d_view<void>& other) noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+    image2d_view(const image2d_view<void>& other) noexcept
+      : m_buffer(other.m_buffer)
+      , m_width(other.m_width)
+      , m_height(other.m_height)
+      , m_pitch(other.m_pitch)
+      , m_elem_size(other.m_elem_size)
+      , m_memory_kind(other.m_memory_kind)
+    {
+    }
     image2d_view(image2d_view<void>&& other) noexcept;
 
     // Assignment operators
@@ -260,7 +271,7 @@ namespace dt
       const T&
       image2d_view<T>::operator()(int x, int y) const noexcept
   {
-    assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
+    assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<const T*>(p);
   }
@@ -272,7 +283,7 @@ namespace dt
       T&
       image2d_view<T>::operator()(int x, int y) noexcept
   {
-    assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
+    assert(in_domain(x, y) && m_buffer);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
     return *reinterpret_cast<T*>(p);
   }

@@ -25,17 +25,6 @@ namespace dt
   {
   }
 
-
-  image2d_view<void>::image2d_view(const image2d_view<void>& other) noexcept
-    : m_buffer(other.m_buffer)
-    , m_width(other.m_width)
-    , m_height(other.m_height)
-    , m_pitch(other.m_pitch)
-    , m_elem_size(other.m_elem_size)
-    , m_memory_kind(other.m_memory_kind)
-  {
-  }
-
   image2d_view<void>::image2d_view(image2d_view<void>&& other) noexcept
     : m_buffer(nullptr)
     , m_width(other.m_width)
