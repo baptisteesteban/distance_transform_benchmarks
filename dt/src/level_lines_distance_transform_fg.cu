@@ -1,4 +1,6 @@
 #include <dt/image2d.hpp>
+
+#include <iostream>
 #include <stdexcept>
 
 namespace dt
@@ -27,19 +29,61 @@ namespace dt
     }
   }
 
-  // Left -> right pass
+  // Left -> Right pass
   template <bool Forward>
   __global__ void pass(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
                        image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
   {
     // Order of traversal metadata
     const int     width   = m.width();
-    const int     height  = m.height();
     const int     start_x = Forward ? 1 : width - 2;
     const int     end_x   = Forward ? width - 1 : 0;
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dx      = -1 * inc;
-    // TODO
+
+    const int y = blockDim.x * blockIdx.x + threadIdx.x;
+    if (y < m.height())
+    {
+      for (int x = start_x; x != end_x; x += inc)
+      {
+        std::uint8_t  q     = clamp(F(x + dx, y), m(x, y), M(x, y));
+        std::uint32_t new_d = D(x + dx, y) + minus_abs(F(x + dx, y), q);
+        if (new_d < D(x, y))
+        {
+          D(x, y)  = new_d;
+          F(x, y)  = q;
+          *changed = true;
+        }
+      }
+    }
+  }
+
+  // Top -> Bottom
+  template <bool Forward>
+  __global__ void pass_T(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
+                         image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
+  {
+    const int     height  = m.height();
+    const int     start_y = Forward ? 1 : height - 2;
+    const int     end_y   = Forward ? height - 1 : 0;
+    constexpr int inc     = Forward ? 1 : -1;
+    constexpr int dy      = -1 * inc;
+
+    const int x = blockDim.x * blockIdx.x + threadIdx.x;
+    if (x < m.width())
+    {
+      for (int y = start_y; y != end_y; y += inc)
+      {
+        std::uint8_t  q     = clamp(F(x, y + dy), m(x, y), M(x, y));
+        std::uint32_t new_d = D(x, y + dy) + minus_abs(F(x, y + dy), q);
+        if (new_d < D(x, y))
+        {
+          D(x, y)  = new_d;
+          F(x, y)  = q;
+          *changed = true;
+        }
+      }
+    }
   }
 
 
@@ -67,20 +111,25 @@ namespace dt
       dim3 grid_dim(D.width() / 32 + 1, D.height() / 32 + 1);
       init<<<grid_dim, block_dim>>>(m, D, F);
       cudaDeviceSynchronize();
-      if (const auto err = cudaGetLastError(); err != cudaSuccess)
-      {
-        throw std::runtime_error(std::format("Error while lauching init kernel: {}", cudaGetErrorString(err)));
-      }
     }
+
+    // Iteration
+    int rounds   = 0;
     int n_blocks = (D.height() / BLOCK_SIZE) + 1;
-    while (changed)
+    while (*changed && rounds < 10000)
     {
-      break;
       *changed = false;
       pass<true><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
       pass<false><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass_T<true><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass_T<false><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
       cudaDeviceSynchronize();
+      rounds += 1;
     }
+
+    if (const auto err = cudaGetLastError(); err != cudaSuccess)
+      throw std::runtime_error(
+          std::format("Error while running level lines distance transform: {}", cudaGetErrorString(err)));
   }
 
   image2d<std::uint32_t> level_lines_distance_transform_fg_gpu(const image2d_view<std::uint8_t>& m,
