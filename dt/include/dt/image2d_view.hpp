@@ -32,10 +32,22 @@ namespace dt
     image2d_view<void>& operator=(const image2d_view<void>& other) noexcept;
     image2d_view<void>& operator=(image2d_view<void>&& other) noexcept;
 
-    // Metadata
-    int                 width() const noexcept;
-    int                 height() const noexcept;
-    int                 pitch() const noexcept;
+// Metadata
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        int
+        width() const noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        int
+        height() const noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        int
+                        pitch() const noexcept;
     int                 elem_size() const noexcept;
     std::uint8_t*       buffer() noexcept;
     const std::uint8_t* buffer() const noexcept;
@@ -43,12 +55,24 @@ namespace dt
 
     // Check
     bool valid() const noexcept;
-    bool in_domain(int x, int y) const noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        bool
+         in_domain(int x, int y) const noexcept;
     bool in_domain(const point2d& p) const noexcept;
 
-    // Accessor
-    std::uint8_t*       operator()(int x, int y) noexcept;
-    const std::uint8_t* operator()(int x, int y) const noexcept;
+// Accessor
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        std::uint8_t*
+        operator()(int x, int y) noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        const           std::uint8_t*
+                        operator()(int x, int y) const noexcept;
     std::uint8_t*       operator()(const point2d& p) noexcept;
     const std::uint8_t* operator()(const point2d& p) const noexcept;
 
@@ -75,9 +99,17 @@ namespace dt
     image2d_view<T>& operator=(const image2d_view<T>& other) noexcept;
     image2d_view<T>& operator=(image2d_view<T>&& other) noexcept;
 
-    // Accessors
-    const T& operator()(int x, int y) const noexcept;
-    T&       operator()(int x, int y) noexcept;
+// Accessors
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        const T&
+        operator()(int x, int y) const noexcept;
+#ifdef __CUDACC__
+    __host__ __device__
+#endif
+        T&
+             operator()(int x, int y) noexcept;
     const T& operator()(const point2d& p) const noexcept;
     T&       operator()(const point2d& p) noexcept;
   };
@@ -85,18 +117,29 @@ namespace dt
   /*
    * Implementations
    */
-
-  inline int image2d_view<void>::width() const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline int
+      image2d_view<void>::width() const noexcept
   {
     return m_width;
   }
 
-  inline int image2d_view<void>::height() const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline int
+      image2d_view<void>::height() const noexcept
   {
     return m_height;
   }
 
-  inline int image2d_view<void>::pitch() const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline int
+      image2d_view<void>::pitch() const noexcept
   {
     return m_pitch;
   }
@@ -120,8 +163,11 @@ namespace dt
   {
     return m_buffer != nullptr;
   }
-
-  inline bool image2d_view<void>::in_domain(int x, int y) const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline bool
+      image2d_view<void>::in_domain(int x, int y) const noexcept
   {
     return x >= 0 && y >= 0 && x < m_width && y < m_height;
   }
@@ -131,13 +177,21 @@ namespace dt
     return in_domain(p.x(), p.y());
   }
 
-  inline std::uint8_t* image2d_view<void>::operator()(int x, int y) noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline std::uint8_t*
+      image2d_view<void>::operator()(int x, int y) noexcept
   {
     assert(in_domain(x, y) && m_buffer);
     return m_buffer + (y * m_pitch + x * m_elem_size);
   }
 
-  inline const std::uint8_t* image2d_view<void>::operator()(int x, int y) const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      inline const std::uint8_t*
+      image2d_view<void>::operator()(int x, int y) const noexcept
   {
     assert(in_domain(x, y) && m_buffer);
     return m_buffer + (y * m_pitch + x * m_elem_size);
@@ -200,7 +254,11 @@ namespace dt
 
 
   template <typename T>
-  const T& image2d_view<T>::operator()(int x, int y) const noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      const T&
+      image2d_view<T>::operator()(int x, int y) const noexcept
   {
     assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
@@ -208,7 +266,11 @@ namespace dt
   }
 
   template <typename T>
-  T& image2d_view<T>::operator()(int x, int y) noexcept
+#ifdef __CUDACC__
+  __host__ __device__
+#endif
+      T&
+      image2d_view<T>::operator()(int x, int y) noexcept
   {
     assert(in_domain(x, y) && m_buffer && m_memory_kind == e_memory_kind::CPU);
     auto p = static_cast<image2d_view<void>>(*this)(x, y);
