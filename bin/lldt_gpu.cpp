@@ -9,6 +9,8 @@
 #include <dt/propagation.hpp>
 #include <dt/transfert.hpp>
 
+#include <iostream>
+
 void save_colored(const char* filename, const dt::image2d_view<std::uint32_t>& D)
 {
   const auto normalized = dt::normalize<std::uint8_t>(D);
@@ -29,10 +31,12 @@ int main(void)
 
   // GPU
   {
+    int        nrounds;
     const auto img    = dt::host_to_device(_img);
     const auto [m, M] = dt::immersion_gpu(img);
-    const auto _D     = dt::level_lines_distance_transform_fg_gpu(m, M);
+    const auto _D     = dt::level_lines_distance_transform_fg_gpu(m, M, &nrounds);
     const auto D      = dt::device_to_host(_D);
+    std::cout << "Number of rounds: " << nrounds << "\n";
     save_colored("out_gpu.png", D);
   }
 }
