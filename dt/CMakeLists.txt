@@ -12,6 +12,7 @@ target_sources(dt-core PRIVATE
     src/inferno.cpp
     src/transfert.cpp
     src/immersion.cu
+    src/level_lines_distance_transform_fg.cu
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)
