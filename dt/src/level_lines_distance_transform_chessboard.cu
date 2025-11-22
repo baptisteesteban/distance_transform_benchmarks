@@ -11,6 +11,7 @@ namespace dt
   static constexpr int BLOCK_SIZE = 16;
 
   // Left -> Right
+  template <bool Forward>
   __device__ bool pass(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
                        image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D)
   {
@@ -20,15 +21,17 @@ namespace dt
     if (y == 0 || y >= m.height() - 1)
       return false;
 
-    const int start_x = bx * BLOCK_SIZE + (bx == 0);
-    const int end_x   = std::min((bx + 1) * BLOCK_SIZE, m.width() - 1);
+    constexpr int inc = Forward ? 1 : -1;
+    constexpr int dx  = -1 * inc;
+    const int start_x = Forward ? bx * BLOCK_SIZE + (bx == 0) : std::min((bx + 1) * BLOCK_SIZE - 1, m.width() - 2) - 1;
+    const int end_x   = Forward ? std::min((bx + 1) * BLOCK_SIZE, m.width() - 1) : 0;
 
     bool line_changed = false;
 
-    for (int x = start_x; x < end_x; x++)
+    for (int x = start_x; x != end_x; x += inc)
     {
-      const auto q     = clamp(F(x - 1, y), m(x, y), M(x, y));
-      const auto new_d = D(x - 1, y) + minus_abs<std::uint32_t>(F(x - 1, y), q);
+      const auto q     = clamp(F(x + dx, y), m(x, y), M(x, y));
+      const auto new_d = D(x + dx, y) + minus_abs<std::uint32_t>(F(x + dx, y), q);
       if (new_d < D(x, y))
       {
         F(x, y)      = q;
@@ -49,7 +52,8 @@ namespace dt
     if (even && blockIdx.x % 2 != blockIdx.y % 2)
       return;
 
-    pass(m, M, F, D);
+    pass<true>(m, M, F, D);
+    pass<false>(m, M, F, D);
   }
 
   void level_lines_distance_transform_chessboard_gpu(const image2d_view<std::uint8_t>& m,
@@ -80,7 +84,7 @@ namespace dt
     {
       *changed = false;
       block_propagation<<<grid_dim, block_dim>>>(M, M, F, D, false, changed);
-      // block_propagation<<<grid_dim, block_dim>>>(M, M, F, D, false, changed);
+      block_propagation<<<grid_dim, block_dim>>>(M, M, F, D, true, changed);
       cudaDeviceSynchronize();
       break;
     }
