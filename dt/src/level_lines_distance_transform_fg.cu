@@ -2,36 +2,14 @@
 
 #include <stdexcept>
 
+#include "utils.cuh"
+
 namespace dt
 {
-  __device__ int clamp(std::uint8_t v, std::uint8_t m, std::uint8_t M)
-  {
-    return v < m ? m : (v > M ? M : v);
-  }
-
-  template <typename T>
-  __device__ T minus_abs(T a, T b)
-  {
-    return a < b ? b - a : a - b;
-  }
-
-  __global__ void init(const image2d_view<std::uint8_t>& m, image2d_view<std::uint32_t>& D,
-                       image2d_view<std::uint8_t>& F)
-  {
-    const int x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int y = blockDim.y * blockIdx.y + threadIdx.y;
-
-    if (x < m.width() && y < m.height() && (x == 0 || y == 0 || x == F.width() - 1 || y == F.height() - 1))
-    {
-      D(x, y) = 0;
-      F(x, y) = m(x, y);
-    }
-  }
-
   // Left -> Right pass
   template <bool Forward>
-  __global__ void pass(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
-                       image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
+  __global__ static void pass(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
+                              image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
   {
     // Order of traversal metadata
     const int     width   = m.width();
@@ -45,7 +23,7 @@ namespace dt
     const int inf_y = blockDim.x * blockIdx.x;
     const int sup_y = (blockIdx.x + 1) * blockDim.x;
 
-    if (y >= height)
+    if (y < 1 || y >= height - 1)
       return;
 
     for (int x = start_x; x != end_x; x += inc)
@@ -70,8 +48,8 @@ namespace dt
 
   // Top -> Bottom
   template <bool Forward>
-  __global__ void pass_T(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
-                         image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
+  __global__ static void pass_T(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
+                                image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool* changed)
   {
     const int     height  = m.height();
     const int     width   = m.width();
@@ -84,7 +62,7 @@ namespace dt
     const int inf_x = blockDim.x * blockIdx.x;
     const int sup_x = (blockIdx.x + 1) * blockDim.x;
 
-    if (x >= width)
+    if (x < 1 || x >= width - 1)
       return;
 
     for (int y = start_y; y != end_y; y += inc)

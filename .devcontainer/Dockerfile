@@ -10,7 +10,8 @@ RUN apt update -y && \
     clangd \
     libgtest-dev \
     curl \
-    libbenchmark-dev && \
+    libbenchmark-dev  \
+    wget && \
     rm -rf /var/lib/apt/lists/*
 
 USER ubuntu
