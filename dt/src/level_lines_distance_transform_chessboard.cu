@@ -28,9 +28,6 @@ namespace dt
     const int     start_y = Forward ? by * BLOCK_SIZE + (by == 0) : std::min((by + 1) * BLOCK_SIZE - 1, m.height() - 2);
     const int     end_y = Forward ? std::min((by + 1) * BLOCK_SIZE, m.height() - 1) : std::max(by * BLOCK_SIZE - 1, 0);
 
-    if (threadIdx.x == 0)
-      printf("(%d, %d) %d -> %d\n", blockIdx.x, blockIdx.y, start_y, end_y);
-
     bool line_changed = false;
 
     for (int y = start_y; y != end_y; y += inc)
