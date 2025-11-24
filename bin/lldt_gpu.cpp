@@ -20,7 +20,7 @@ void save_colored(const char* filename, const dt::image2d_view<std::uint32_t>& D
 
 int main(void)
 {
-  const auto _img = dt::add_median_border(dt::imread<std::uint8_t>("/data/amazigh.pgm"));
+  const auto _img = dt::add_median_border(dt::imread<std::uint8_t>("/data/eye.pgm"));
 
   // CPU
   {
