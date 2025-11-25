@@ -73,13 +73,10 @@ namespace dt
                                     image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool even,
                                     bool* changed)
   {
-    const int bx    = blockIdx.x;
-    const int by    = blockIdx.y;
-    const int cur_x = bx * BLOCK_SIZE;
-    const int cur_y = by * BLOCK_SIZE + threadIdx.x;
-
-    if (cur_y >= m.height())
-      return;
+    const int bx = blockIdx.x;
+    const int by = blockIdx.y;
+    const int x  = bx * BLOCK_SIZE;
+    const int y  = by * BLOCK_SIZE + threadIdx.x;
 
     if (!even && bx % 2 == by % 2)
       return;
@@ -93,21 +90,26 @@ namespace dt
     __shared__ std::uint32_t s_D[TILE_SIZE][TILE_SIZE];
 
     {
+      // Here, x and y denote the start of the block line in memory
       const std::uint8_t m0 = m(0, 0);
-      for (int _dx = -1; _dx <= BLOCK_SIZE; _dx++)
+
+      // tx and ty are the tile indices
+      for (int tx = 0; tx < TILE_SIZE; ++tx)
       {
-        const int dx = cur_x + _dx;
-        for (int _dy = -BLOCK_SIZE; _dy <= BLOCK_SIZE; _dy += BLOCK_SIZE)
+        for (int dty = -BLOCK_SIZE; dty <= BLOCK_SIZE; dty += BLOCK_SIZE)
         {
-          const int oy = threadIdx.x + _dy;
-          if (oy < 0 || oy >= TILE_SIZE)
+          const int ty = threadIdx.x + dty + 1;
+          if (ty < 0 || ty >= TILE_SIZE)
             continue;
 
-          const int dy     = cur_y + _dy;
-          s_m[oy][_dx + 1] = dy >= 0 && dx >= 0 && dx < m.width() && dy < m.height() ? m(dx, dy) : m0;
-          s_M[oy][_dx + 1] = dy >= 0 && dx >= 0 && dx < m.width() && dy < m.height() ? M(dx, dy) : m0;
-          s_F[oy][_dx + 1] = dy >= 0 && dx >= 0 && dx < m.width() && dy < m.height() ? F(dx, dy) : m0;
-          s_D[oy][_dx + 1] = dy >= 0 && dx >= 0 && dx < m.width() && dy < m.height() ? D(dx, dy) : 0;
+          const int gx = x + tx - 1;
+          const int gy = y + dty;
+
+          bool valid  = gx >= 0 && gx < m.width() && gy >= 0 && gy < m.height();
+          s_m[ty][tx] = valid ? m(gx, gy) : m0;
+          s_M[ty][tx] = valid ? M(gx, gy) : m0;
+          s_F[ty][tx] = valid ? F(gx, gy) : m0;
+          s_D[ty][tx] = valid ? D(gx, gy) : 0;
         }
       }
     }
@@ -144,13 +146,15 @@ namespace dt
     }
 
     // Loading tile into global memory
-    for (int _dx = 1; _dx <= BLOCK_SIZE; _dx++)
     {
-      const int dx = cur_x + _dx - 1;
-      if (dx < m.width())
+      const int ty = threadIdx.x + 1;
+      for (int tx = 0; tx < BLOCK_SIZE; ++tx)
       {
-        D(dx, cur_y) = s_D[threadIdx.x + 1][_dx];
-        F(dx, cur_y) = s_F[threadIdx.x + 1][_dx];
+        if (x + tx < m.width() && y < m.height())
+        {
+          F(x + tx, y) = s_F[ty][tx + 1];
+          D(x + tx, y) = s_D[ty][tx + 1];
+        }
       }
     }
     __syncthreads();
@@ -179,15 +183,13 @@ namespace dt
 
     dim3 grid_dim(m.width() / BLOCK_SIZE + 1, m.height() / BLOCK_SIZE + 1);
     dim3 block_dim(BLOCK_SIZE);
-    bool even    = false;
-    int  nrounds = 0;
-    while (*changed && nrounds < 1)
+    bool even = false;
+    while (*changed)
     {
       *changed = false;
       block_propagation<<<grid_dim, block_dim>>>(m, M, F, D, even, changed);
       cudaDeviceSynchronize();
       even = !even;
-      nrounds += 1;
     }
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(
