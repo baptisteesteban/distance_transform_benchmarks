@@ -12,6 +12,7 @@ namespace dt
 {
   static constexpr int BLOCK_SIZE = 16;
   static constexpr int TILE_SIZE  = BLOCK_SIZE + 2; // Halo of 2 to handle border values
+  static constexpr int WINDOW     = 0;
 
   // Top -> Bottom
   template <bool Forward>
@@ -28,14 +29,18 @@ namespace dt
 
     for (int y = start_y; y != end_y; y += inc)
     {
-      const std::uint8_t  q     = clamp(F[y + dy][x], m[y][x], M[y][x]);
-      const std::uint32_t new_d = D[y + dy][x] + minus_abs<std::uint32_t>(F[y + dy][x], q);
-      if (new_d < D[y][x])
+      for (int dx = -WINDOW; dx < WINDOW + 1; ++dx)
       {
-        F[y][x]      = q;
-        D[y][x]      = new_d;
-        line_changed = true;
+        const std::uint8_t  q     = clamp(F[y + dy][x + dx], m[y][x], M[y][x]);
+        const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
+        if (new_d < D[y][x])
+        {
+          F[y][x]      = q;
+          D[y][x]      = new_d;
+          line_changed = true;
+        }
       }
+      __syncthreads();
     }
 
     return line_changed;
@@ -56,14 +61,18 @@ namespace dt
 
     for (int x = start_x; x != end_x; x += inc)
     {
-      const std::uint8_t  q     = clamp(F[y][x + dx], m[y][x], M[y][x]);
-      const std::uint32_t new_d = D[y][x + dx] + minus_abs<std::uint32_t>(F[y][x + dx], q);
-      if (new_d < D[y][x])
+      for (int dy = -WINDOW; dy < WINDOW + 1; ++dy)
       {
-        F[y][x]      = q;
-        D[y][x]      = new_d;
-        line_changed = true;
+        const std::uint8_t  q     = clamp(F[y + dy][x + dx], m[y][x], M[y][x]);
+        const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
+        if (new_d < D[y][x])
+        {
+          F[y][x]      = q;
+          D[y][x]      = new_d;
+          line_changed = true;
+        }
       }
+      __syncthreads();
     }
 
     return line_changed;
