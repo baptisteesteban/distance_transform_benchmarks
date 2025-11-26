@@ -14,10 +14,19 @@ namespace dt
   static constexpr int TILE_SIZE  = BLOCK_SIZE + 2; // Halo of 2 to handle border values
   static constexpr int WINDOW     = 1;              // 0 or 1 (if > 1 memory error)
 
+  enum e_block_changed_mask
+  {
+    BLOCK_CHANGED_LEFT   = 1,
+    BLOCK_CHANGED_RIGHT  = 2,
+    BLOCK_CHANGED_TOP    = 4,
+    BLOCK_CHANGED_BOTTOM = 8,
+    BLOCK_CHANGED_ANY    = 16
+  };
+
   // Top -> Bottom
   template <bool Forward>
-  __device__ bool pass_T(const std::uint8_t m[][TILE_SIZE], const std::uint8_t M[][TILE_SIZE],
-                         std::uint8_t F[][TILE_SIZE], std::uint32_t D[][TILE_SIZE])
+  __device__ int pass_T(const std::uint8_t m[][TILE_SIZE], const std::uint8_t M[][TILE_SIZE],
+                        std::uint8_t F[][TILE_SIZE], std::uint32_t D[][TILE_SIZE])
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dy      = -1 * inc;
@@ -25,7 +34,7 @@ namespace dt
     const int     end_y   = Forward ? TILE_SIZE - 1 : 0;
     const int     x       = threadIdx.x + 1;
 
-    bool line_changed = false;
+    int line_changed = 0;
 
     for (int y = start_y; y != end_y; y += inc)
     {
@@ -38,6 +47,13 @@ namespace dt
           F[y][x]      = q;
           D[y][x]      = new_d;
           line_changed = true;
+
+          if (y == 1)
+            line_changed |= BLOCK_CHANGED_TOP;
+          else if (y == TILE_SIZE - 2)
+            line_changed |= BLOCK_CHANGED_BOTTOM;
+          else
+            line_changed |= BLOCK_CHANGED_ANY;
         }
       }
       __syncthreads();
@@ -48,8 +64,8 @@ namespace dt
 
   // Left -> Right
   template <bool Forward>
-  __device__ bool pass(const std::uint8_t m[][TILE_SIZE], const std::uint8_t M[][TILE_SIZE],
-                       std::uint8_t F[][TILE_SIZE], std::uint32_t D[][TILE_SIZE])
+  __device__ int pass(const std::uint8_t m[][TILE_SIZE], const std::uint8_t M[][TILE_SIZE], std::uint8_t F[][TILE_SIZE],
+                      std::uint32_t D[][TILE_SIZE])
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dx      = -1 * inc;
@@ -57,7 +73,7 @@ namespace dt
     const int     end_x   = Forward ? TILE_SIZE - 1 : 0;
     const int     y       = threadIdx.x + 1;
 
-    bool line_changed = false;
+    int line_changed = 0;
 
     for (int x = start_x; x != end_x; x += inc)
     {
@@ -70,6 +86,13 @@ namespace dt
           F[y][x]      = q;
           D[y][x]      = new_d;
           line_changed = true;
+
+          if (x == 1)
+            line_changed |= BLOCK_CHANGED_LEFT;
+          else if (x == TILE_SIZE - 2)
+            line_changed |= BLOCK_CHANGED_RIGHT;
+          else
+            line_changed |= BLOCK_CHANGED_ANY;
         }
       }
       __syncthreads();
@@ -80,17 +103,21 @@ namespace dt
 
   __global__ void block_propagation(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
                                     image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool even,
-                                    bool* changed)
+                                    bool* active, bool* changed)
   {
-    const int bx = blockIdx.x;
-    const int by = blockIdx.y;
-    const int x  = bx * BLOCK_SIZE;
-    const int y  = by * BLOCK_SIZE + threadIdx.x;
+    const int bx  = blockIdx.x;
+    const int by  = blockIdx.y;
+    const int bid = by * gridDim.x + bx;
 
     if (!even && bx % 2 == by % 2)
       return;
     if (even && bx % 2 != by % 2)
       return;
+    if (!active[bid])
+      return;
+
+    const int x = bx * BLOCK_SIZE;
+    const int y = by * BLOCK_SIZE + threadIdx.x;
 
     // Loading tile into shared memory
     __shared__ std::uint8_t s_m[TILE_SIZE][TILE_SIZE];
@@ -140,21 +167,31 @@ namespace dt
       __syncthreads();
 
       int t_changed = 0;
-      t_changed += pass<true>(s_m, s_M, s_F, s_D);
+      t_changed |= pass<true>(s_m, s_M, s_F, s_D);
       __syncthreads();
-      t_changed += pass<false>(s_m, s_M, s_F, s_D);
+      t_changed |= pass<false>(s_m, s_M, s_F, s_D);
       __syncthreads();
-      t_changed += pass_T<true>(s_m, s_M, s_F, s_D);
+      t_changed |= pass_T<true>(s_m, s_M, s_F, s_D);
       __syncthreads();
-      t_changed += pass_T<false>(s_m, s_M, s_F, s_D);
+      t_changed |= pass_T<false>(s_m, s_M, s_F, s_D);
       __syncthreads();
 
       if (t_changed)
-        atomicOr_block(&block_changed, 1);
+        atomicOr_block(&block_changed, t_changed);
       __syncthreads();
 
       if (threadIdx.x == 0 && block_changed)
+      {
+        if (by > 0 && block_changed | BLOCK_CHANGED_TOP)
+          active[(by - 1) * gridDim.x + bx] = true;
+        if (by < gridDim.y - 1 && block_changed | BLOCK_CHANGED_BOTTOM)
+          active[(by + 1) * gridDim.x + bx] = true;
+        if (bx > 0 && block_changed | BLOCK_CHANGED_LEFT)
+          active[by * gridDim.x + bx - 1] = true;
+        if (bx < gridDim.x - 1 && block_changed | BLOCK_CHANGED_RIGHT)
+          active[by * gridDim.x + bx + 1] = true;
         *changed = true;
+      }
       __syncthreads();
     }
 
@@ -170,6 +207,8 @@ namespace dt
         }
       }
     }
+    if (threadIdx.x == 0)
+      active[bid] = false;
     __syncthreads();
   }
 
@@ -194,16 +233,23 @@ namespace dt
     cudaMallocManaged(&changed, sizeof(bool));
     *changed = true;
 
-    dim3 grid_dim(m.width() / BLOCK_SIZE + 1, m.height() / BLOCK_SIZE + 1);
-    dim3 block_dim(BLOCK_SIZE);
-    bool even = false;
+    const int grid_width  = m.width() / BLOCK_SIZE + 1;
+    const int grid_height = m.height() / BLOCK_SIZE + 1;
+    dim3      grid_dim(grid_width, grid_height);
+    dim3      block_dim(BLOCK_SIZE);
+    bool      even = false;
+    bool*     active;
+    cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
+    cudaMemset(active, 0xFF, grid_width * grid_height * sizeof(bool));
     while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(m, M, F, D, even, changed);
+      block_propagation<<<grid_dim, block_dim>>>(m, M, F, D, even, active, changed);
       cudaDeviceSynchronize();
       even = !even;
     }
+    cudaFree(active);
+    cudaFree(changed);
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(
           std::format("Error while running level lines distance transform: {}", cudaGetErrorString(err)));

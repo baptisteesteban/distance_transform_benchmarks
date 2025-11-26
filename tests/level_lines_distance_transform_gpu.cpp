@@ -28,7 +28,7 @@ TEST(LevelLinesDistanceTransformGPU, FG)
   ASSERT_IMAGES_EQ(D_cpu, D_gpu);
 }
 
-TEST(LevelLinesDistanceTransformGPU_Chessboard, FG)
+TEST(LevelLinesDistanceTransformGPU, Chessboard)
 {
   const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(200, 200));
 
