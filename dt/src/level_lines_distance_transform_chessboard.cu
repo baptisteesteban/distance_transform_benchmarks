@@ -12,7 +12,7 @@ namespace dt
 {
   static constexpr int BLOCK_SIZE = 16;
   static constexpr int TILE_SIZE  = BLOCK_SIZE + 2; // Halo of 2 to handle border values
-  static constexpr int WINDOW     = 0;
+  static constexpr int WINDOW     = 1;              // 0 or 1 (if > 1 memory error)
 
   // Top -> Bottom
   template <bool Forward>
@@ -118,7 +118,11 @@ namespace dt
           s_m[ty][tx] = valid ? m(gx, gy) : m0;
           s_M[ty][tx] = valid ? M(gx, gy) : m0;
           s_F[ty][tx] = valid ? F(gx, gy) : m0;
-          s_D[ty][tx] = valid ? D(gx, gy) : 0;
+          if ((tx == 0 && ty == 0) || (tx == 0 && ty == TILE_SIZE - 1) || (tx == TILE_SIZE - 1 && ty == 0) ||
+              (tx == TILE_SIZE - 1 && ty == TILE_SIZE - 1)) // Handling corners
+            s_D[ty][tx] = std::numeric_limits<std::int32_t>::max();
+          else
+            s_D[ty][tx] = valid ? D(gx, gy) : 0;
         }
       }
     }
