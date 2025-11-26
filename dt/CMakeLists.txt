@@ -18,6 +18,7 @@ target_sources(dt-core PRIVATE
     src/immersion.cu
     src/level_lines_distance_transform_fg.cu
     src/level_lines_distance_transform_chessboard.cu
+    src/level_lines_distance_transform_task_priority.cu
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)
