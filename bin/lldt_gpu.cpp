@@ -39,20 +39,33 @@ int main(int argc, char* argv[])
     const auto _D             = dt::level_lines_distance_transform_chessboard_gpu(m_gpu, M_gpu);
     const auto D              = dt::device_to_host(_D);
 
-    int n_invalid = 0;
+    auto diff      = dt::image2d<std::uint8_t>(D.width(), D.height());
+    int  n_invalid = 0;
     for (int y = 0; y < D.height(); y++)
     {
       for (int x = 0; x < D.width(); x++)
       {
         if (D(x, y) != D_cpu(x, y))
         {
+          diff(x, y) = 255;
           std::cout << std::format("Invalid value in ({}, {})\n", x, y);
           ++n_invalid;
+        }
+        else
+        {
+          diff(x, y) = 0;
         }
       }
     }
     if (!n_invalid)
+    {
       std::cout << "Perfect match\n";
+    }
+    else
+    {
+      std::cout << "Invalid: " << (static_cast<float>(n_invalid) / (D.width() * D.height())) * 100 << " %\n";
+    }
     save_colored("out_gpu.png", D);
+    dt::imsave("diff.png", diff);
   }
 }

@@ -40,16 +40,18 @@ namespace dt
         const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
         if (new_d < D[y][x])
         {
-          F[y][x]      = q;
-          D[y][x]      = new_d;
-          line_changed = true;
+          F[y][x] = q;
+          D[y][x] = new_d;
+          line_changed |= BLOCK_CHANGED_ANY;
 
           if (y == 1)
             line_changed |= BLOCK_CHANGED_TOP;
-          else if (y == TILE_SIZE - 2)
+          if (y == TILE_SIZE - 2)
             line_changed |= BLOCK_CHANGED_BOTTOM;
-          else
-            line_changed |= BLOCK_CHANGED_ANY;
+          if (x == 1)
+            line_changed |= BLOCK_CHANGED_LEFT;
+          if (x == TILE_SIZE - 2)
+            line_changed |= BLOCK_CHANGED_RIGHT;
         }
       }
       __syncthreads();
@@ -79,16 +81,18 @@ namespace dt
         const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
         if (new_d < D[y][x])
         {
-          F[y][x]      = q;
-          D[y][x]      = new_d;
-          line_changed = true;
+          F[y][x] = q;
+          D[y][x] = new_d;
+          line_changed |= BLOCK_CHANGED_ANY;
 
+          if (y == 1)
+            line_changed |= BLOCK_CHANGED_TOP;
+          if (y == TILE_SIZE - 2)
+            line_changed |= BLOCK_CHANGED_BOTTOM;
           if (x == 1)
             line_changed |= BLOCK_CHANGED_LEFT;
-          else if (x == TILE_SIZE - 2)
+          if (x == TILE_SIZE - 2)
             line_changed |= BLOCK_CHANGED_RIGHT;
-          else
-            line_changed |= BLOCK_CHANGED_ANY;
         }
       }
       __syncthreads();

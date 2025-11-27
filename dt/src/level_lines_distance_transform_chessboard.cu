@@ -92,13 +92,13 @@ namespace dt
 
       if (threadIdx.x == 0 && block_changed)
       {
-        if (by > 0 && block_changed | BLOCK_CHANGED_TOP)
+        if (by > 0 && block_changed & BLOCK_CHANGED_TOP)
           active[(by - 1) * gridDim.x + bx] = true;
-        if (by < gridDim.y - 1 && block_changed | BLOCK_CHANGED_BOTTOM)
+        if (by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM)
           active[(by + 1) * gridDim.x + bx] = true;
-        if (bx > 0 && block_changed | BLOCK_CHANGED_LEFT)
+        if (bx > 0 && block_changed & BLOCK_CHANGED_LEFT)
           active[by * gridDim.x + bx - 1] = true;
-        if (bx < gridDim.x - 1 && block_changed | BLOCK_CHANGED_RIGHT)
+        if (bx < gridDim.x - 1 && block_changed & BLOCK_CHANGED_RIGHT)
           active[by * gridDim.x + bx + 1] = true;
         *changed = true;
       }
