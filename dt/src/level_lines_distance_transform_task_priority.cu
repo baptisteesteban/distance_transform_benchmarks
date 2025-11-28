@@ -12,7 +12,7 @@ namespace dt
 {
   namespace cg = cooperative_groups;
 
-  __device__ static bool block_propagation_job(const image2d<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
+  __device__ static bool block_propagation_job(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
                                                image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D,
                                                DeviceTaskQueue tq)
   {
@@ -132,8 +132,8 @@ namespace dt
     return true;
   }
 
-  __global__ static void block_propagation(const image2d<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
-                                           image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D,
+  __global__ static void block_propagation(image2d_view<std::uint8_t> m, image2d_view<std::uint8_t> M,
+                                           image2d_view<std::uint8_t> F, image2d_view<std::uint32_t> D,
                                            DeviceTaskQueue tq)
   {
     auto          grid        = cg::this_grid();
