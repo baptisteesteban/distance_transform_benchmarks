@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   {
     const auto img            = dt::host_to_device(_img);
     const auto [m_gpu, M_gpu] = dt::immersion_gpu(img);
-    const auto _D             = dt::level_lines_distance_transform_chessboard_gpu(m_gpu, M_gpu);
+    const auto _D             = dt::level_lines_distance_transform_task_priority_gpu(m_gpu, M_gpu);
     const auto D              = dt::device_to_host(_D);
 
     auto diff      = dt::image2d<std::uint8_t>(D.width(), D.height());

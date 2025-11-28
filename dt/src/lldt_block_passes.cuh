@@ -42,16 +42,12 @@ namespace dt
         {
           F[y][x] = q;
           D[y][x] = new_d;
-          line_changed |= BLOCK_CHANGED_ANY;
 
-          if (y == 1)
-            line_changed |= BLOCK_CHANGED_TOP;
-          if (y == TILE_SIZE - 2)
-            line_changed |= BLOCK_CHANGED_BOTTOM;
-          if (x == 1)
-            line_changed |= BLOCK_CHANGED_LEFT;
-          if (x == TILE_SIZE - 2)
-            line_changed |= BLOCK_CHANGED_RIGHT;
+          line_changed |= BLOCK_CHANGED_ANY;
+          line_changed |= (y == 1) * BLOCK_CHANGED_TOP;
+          line_changed |= (y == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
+          line_changed |= (x == 1) * BLOCK_CHANGED_LEFT;
+          line_changed |= (x == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
         }
       }
       __syncthreads();
@@ -83,16 +79,12 @@ namespace dt
         {
           F[y][x] = q;
           D[y][x] = new_d;
-          line_changed |= BLOCK_CHANGED_ANY;
 
-          if (y == 1)
-            line_changed |= BLOCK_CHANGED_TOP;
-          if (y == TILE_SIZE - 2)
-            line_changed |= BLOCK_CHANGED_BOTTOM;
-          if (x == 1)
-            line_changed |= BLOCK_CHANGED_LEFT;
-          if (x == TILE_SIZE - 2)
-            line_changed |= BLOCK_CHANGED_RIGHT;
+          line_changed |= BLOCK_CHANGED_ANY;
+          line_changed |= (y == 1) * BLOCK_CHANGED_TOP;
+          line_changed |= (y == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
+          line_changed |= (x == 1) * BLOCK_CHANGED_LEFT;
+          line_changed |= (x == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
         }
       }
       __syncthreads();

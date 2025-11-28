@@ -108,7 +108,7 @@ namespace dt
     // Initialize algorithm
     {
       dim3 block_dim(32, 32);
-      dim3 grid_dim(D.width() / 32 + 1, D.height() / 32 + 1);
+      dim3 grid_dim(D.width() + 31 / 32, D.height() + 31 / 32);
       init<<<grid_dim, block_dim>>>(m, D, F);
       cudaDeviceSynchronize();
     }

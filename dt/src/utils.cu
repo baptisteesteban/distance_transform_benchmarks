@@ -23,4 +23,24 @@ namespace dt
       D(x, y) = std::numeric_limits<std::int32_t>::max();
     }
   }
+
+  __global__ void initialize_task_queue(DeviceTaskQueue q)
+  {
+    const int width  = q.gridDimX;
+    const int height = q.gridDimY;
+    const int i      = (blockIdx.x * blockDim.x + threadIdx.x);
+    const int step   = blockDim.x * gridDim.x;
+
+    for (int k = i; 2 * k < width; k += step)
+      q.enqueueTask(2 * k, 0);
+
+    for (int k = i, b = (height - 1) % 2; 2 * k + b < width; k += step)
+      q.enqueueTask(2 * k + b, height - 1);
+
+    for (int k = i; 2 * k < height; k += step)
+      q.enqueueTask(0, 2 * k);
+
+    for (int k = i, b = (width - 1) % 2; 2 * k + b < height; k += step)
+      q.enqueueTask(width - 1, 2 * k + b);
+  }
 } // namespace dt

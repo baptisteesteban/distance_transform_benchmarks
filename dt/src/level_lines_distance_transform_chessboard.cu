@@ -11,9 +11,9 @@
 
 namespace dt
 {
-  __global__ void block_propagation(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
-                                    image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool even,
-                                    bool* active, bool* changed)
+  __global__ static void block_propagation(const image2d_view<std::uint8_t>& m, const image2d_view<std::uint8_t>& M,
+                                           image2d_view<std::uint8_t>& F, image2d_view<std::uint32_t>& D, bool even,
+                                           bool* active, bool* changed)
   {
     const int bx  = blockIdx.x;
     const int by  = blockIdx.y;
@@ -134,7 +134,7 @@ namespace dt
     image2d<std::uint8_t> F(m.width(), m.height(), e_memory_kind::GPU);
     {
       dim3 block_dim(32, 32);
-      dim3 grid_dim(D.width() / 32 + 1, D.height() / 32 + 1);
+      dim3 grid_dim(D.width() + 31 / 32, D.height() + 31 / 32);
       init<<<grid_dim, block_dim>>>(m, D, F);
       cudaDeviceSynchronize();
     }
@@ -143,8 +143,8 @@ namespace dt
     cudaMallocManaged(&changed, sizeof(bool));
     *changed = true;
 
-    const int grid_width  = m.width() / BLOCK_SIZE + 1;
-    const int grid_height = m.height() / BLOCK_SIZE + 1;
+    const int grid_width  = (m.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    const int grid_height = (m.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
     bool      even = false;
