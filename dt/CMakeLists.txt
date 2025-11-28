@@ -15,6 +15,7 @@ target_sources(dt-core PRIVATE
 
     # CUDA source code
     src/utils.cu
+    src/task_queue.cu
     src/immersion.cu
     src/level_lines_distance_transform_fg.cu
     src/level_lines_distance_transform_chessboard.cu
