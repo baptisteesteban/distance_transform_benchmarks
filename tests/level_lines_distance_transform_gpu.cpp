@@ -11,9 +11,12 @@
 
 #include "helpers.hpp"
 
+static constexpr int IMAGE_WIDTH  = 250;
+static constexpr int IMAGE_HEIGHT = 230;
+
 TEST(LevelLinesDistanceTransformGPU, FG)
 {
-  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(200, 200));
+  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(IMAGE_WIDTH, IMAGE_HEIGHT));
 
   // CPU version
   const auto [m, M] = dt::immersion(img);
@@ -30,7 +33,7 @@ TEST(LevelLinesDistanceTransformGPU, FG)
 
 TEST(LevelLinesDistanceTransformGPU, Chessboard)
 {
-  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(200, 200));
+  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(IMAGE_WIDTH, IMAGE_HEIGHT));
 
   // CPU version
   const auto [m, M] = dt::immersion(img);
@@ -47,7 +50,7 @@ TEST(LevelLinesDistanceTransformGPU, Chessboard)
 
 TEST(LevelLinesDistanceTransformGPU, PriorityTaskQueue)
 {
-  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(200, 200));
+  const auto img = dt::add_median_border(dt::random_image2d<std::uint8_t>(IMAGE_WIDTH, IMAGE_HEIGHT));
 
   // CPU version
   const auto [m, M] = dt::immersion(img);

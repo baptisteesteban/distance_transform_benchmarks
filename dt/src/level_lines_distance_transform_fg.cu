@@ -114,15 +114,16 @@ namespace dt
     }
 
     // Iteration
-    int _nrounds = 0;
-    int n_blocks = (D.height() / BLOCK_SIZE) + 1;
+    int       _nrounds   = 0;
+    const int n_blocks_h = (D.height() / BLOCK_SIZE) + 1;
+    const int n_blocks_w = (D.width() / BLOCK_SIZE) + 1;
     while (*changed)
     {
       *changed = false;
-      pass<true><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
-      pass<false><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
-      pass_T<true><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
-      pass_T<false><<<n_blocks, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass<true><<<n_blocks_h, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass<false><<<n_blocks_h, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass_T<true><<<n_blocks_w, BLOCK_SIZE>>>(m, M, F, D, changed);
+      pass_T<false><<<n_blocks_w, BLOCK_SIZE>>>(m, M, F, D, changed);
       cudaDeviceSynchronize();
       _nrounds += 1;
     }
