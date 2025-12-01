@@ -1,8 +1,8 @@
 build
 .vscode
-*.png
+**/*.png
 dist
-.uv_cache
-.venv
+**/.uv_cache
+**/.venv
 **/.ipynb_checkpoints
 **/__pycache__

@@ -1,0 +1,17 @@
+[project]
+name = "dt_binaries"
+version = "0.1.0"
+authors = [{ name = "Baptiste Esteban", email = "baptiste.esteban@epita.fr" }]
+requires-python = ">=3.12"
+dependencies = [
+    "fastgeodis==1.0.5",
+    "imageio==2.37.2",
+    "matplotlib==3.10.7",
+    "notebook>=7.5.0",
+]
+
+[dependency-groups]
+dev = ["ruff==0.14.7"]
+
+[tool.ruff]
+line-length = 100
