@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
   const auto d_mask  = dt::host_to_device(mask);
   const auto d_dist  = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 0, 1, 100);
   const auto dist    = dt::device_to_host(d_dist);
-  const auto norm    = dt::normalize<std::uint8_t>(mask);
+  const auto norm    = dt::normalize<std::uint8_t>(dist);
   const auto colored = dt::inferno(norm);
   dt::imsave("out.png", colored);
 }

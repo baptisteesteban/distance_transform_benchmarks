@@ -21,23 +21,25 @@ namespace dt
     constexpr int dx      = -1 * inc;
 
     // Current line
-    const int y = blockDim.x * blockIdx.x + threadIdx.x;
+    const int y     = blockDim.x * blockIdx.x + threadIdx.x;
+    const int inf_y = blockDim.x * blockIdx.x;
+    const int sup_y = (blockIdx.x + 1) * blockDim.x;
 
     if (y >= img.height())
       return;
 
-    for (int x = start_x; x < end_x; x += inc)
+    for (int x = start_x; x != end_x; x += inc)
     {
       float new_dist = D(x, y);
 
       for (int dy = -1; dy < 2; dy++)
       {
-        const int cur_y = y + dy;
-        if (cur_y < 0 || cur_y >= img.height())
+        const int ny = y + dy;
+        if (ny < inf_y || ny >= sup_y || ny >= img.height())
           continue;
 
-        const float l_dist   = l1distance_cuda(img(x, y), img(x + dx, cur_y));
-        const float cur_dist = D(x + dx, cur_y) + l_eucl * local_dist2d[dy + 1] + l_grad * l_dist;
+        const float l_dist   = l1distance_cuda(img(x, y), img(x + dx, ny));
+        const float cur_dist = D(x + dx, ny) + l_eucl * local_dist2d[dy + 1] + l_grad * l_dist;
         new_dist             = std::min(new_dist, cur_dist);
       }
 
@@ -59,7 +61,9 @@ namespace dt
     constexpr int dy      = -1 * inc;
 
     // Current column
-    const int x = blockDim.x * blockDim.x * threadIdx.x;
+    const int x     = blockDim.x * blockDim.x + threadIdx.x;
+    const int inf_x = blockDim.x * blockIdx.x;
+    const int sup_x = (blockIdx.x + 1) * blockDim.x;
 
     if (x >= img.width())
       return;
@@ -69,12 +73,12 @@ namespace dt
       float new_dist = D(x, y);
       for (int dx = -1; dx < 2; dx++)
       {
-        const int cur_x = y + dx;
-        if (dx < 0 || dx >= img.width())
+        const int nx = x + dx;
+        if (nx < inf_x || nx >= sup_x || nx >= img.width())
           continue;
 
-        const float l_dist   = l1distance_cuda(img(x, y), img(cur_x, y + dy));
-        const float cur_dist = D(cur_x, y + dy) + l_eucl * local_dist2d[dx + 1] + l_grad * l_dist;
+        const float l_dist   = l1distance_cuda(img(x, y), img(nx, y + dy));
+        const float cur_dist = D(nx, y + dy) + l_eucl * local_dist2d[dx + 1] + l_grad * l_dist;
         new_dist             = std::min(new_dist, cur_dist);
       }
 
@@ -106,19 +110,20 @@ namespace dt
     cudaMemcpyToSymbol(local_dist2d, local_dist, 3 * sizeof(float));
 
     {
-      dim3 gridDim(D.width() + 31 / 32, D.height() + 31 / 32);
+      dim3 gridDim((D.width() + 31) / 32, (D.height() + 31) / 32);
       dim3 blockDim(32, 32);
       initialize_distance_map<<<gridDim, blockDim>>>(mask, D, v);
     }
 
     const int n_blocks_w = (img.width() + N_THREADS - 1) / N_THREADS;
-    const int n_blocks_h = (img.width() + N_THREADS - 1) / N_THREADS;
+    const int n_blocks_h = (img.height() + N_THREADS - 1) / N_THREADS;
     for (int i = 0; i < iterations; i++)
     {
       pass<true><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl);
       pass<false><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl);
       pass_T<true><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl);
       pass_T<false><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl);
+      cudaDeviceSynchronize();
     }
   }
 
