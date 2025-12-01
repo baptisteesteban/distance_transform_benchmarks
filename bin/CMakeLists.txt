@@ -2,3 +2,5 @@ add_executable(level_lines_distance_transform_propagation level_lines_distance_t
 target_link_libraries(level_lines_distance_transform_propagation PRIVATE dt::io)
 add_executable(lldt_gpu lldt_gpu.cpp)
 target_link_libraries(lldt_gpu PRIVATE dt::io)
+add_executable(euclidian_distance_transform euclidian_distance_transform.cpp)
+target_link_libraries(euclidian_distance_transform PRIVATE dt::io)
