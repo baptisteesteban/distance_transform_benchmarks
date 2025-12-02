@@ -5,9 +5,9 @@
 namespace dt
 {
   void geodesic_distance_transform(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
-                                   image2d_view<float>& dist, float v, float l_grad, float l_eucl, int iterations);
+                                   image2d_view<float>& dist, float v, float lambda, int iterations);
 
   image2d<float> geodesic_distance_transform(const image2d_view<std::uint8_t>& img,
-                                             const image2d_view<std::uint8_t>& mask, float v, float l_grad,
-                                             float l_eucl, int iterations);
+                                             const image2d_view<std::uint8_t>& mask, float v, float lambda,
+                                             int iterations);
 } // namespace dt

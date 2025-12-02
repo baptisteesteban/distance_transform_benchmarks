@@ -23,7 +23,7 @@ namespace dt
     // Current line
     const int y     = blockDim.x * blockIdx.x + threadIdx.x;
     const int inf_y = blockDim.x * blockIdx.x;
-    const int sup_y = (blockIdx.x + 1) * blockDim.x;
+    const int sup_y = std::min<int>((blockIdx.x + 1) * blockDim.x, img.height());
 
     if (y >= img.height())
       return;
@@ -35,10 +35,10 @@ namespace dt
       for (int dy = -1; dy < 2; dy++)
       {
         const int ny = y + dy;
-        if (ny < inf_y || ny >= sup_y || ny >= img.height())
+        if (ny < inf_y || ny >= sup_y)
           continue;
 
-        const float l_dist   = l1distance_cuda(img(x, y), img(x + dx, ny));
+        const float l_dist   = minus_abs(img(x, y), img(x + dx, ny));
         const float cur_dist = D(x + dx, ny) + l_eucl * local_dist2d[dy + 1] + l_grad * l_dist;
         new_dist             = std::min(new_dist, cur_dist);
       }
@@ -61,9 +61,9 @@ namespace dt
     constexpr int dy      = -1 * inc;
 
     // Current column
-    const int x     = blockDim.x * blockDim.x + threadIdx.x;
+    const int x     = blockDim.x * blockIdx.x + threadIdx.x;
     const int inf_x = blockDim.x * blockIdx.x;
-    const int sup_x = (blockIdx.x + 1) * blockDim.x;
+    const int sup_x = std::min<int>((blockIdx.x + 1) * blockDim.x, img.width());
 
     if (x >= img.width())
       return;
@@ -74,10 +74,10 @@ namespace dt
       for (int dx = -1; dx < 2; dx++)
       {
         const int nx = x + dx;
-        if (nx < inf_x || nx >= sup_x || nx >= img.width())
+        if (nx < inf_x || nx >= sup_x)
           continue;
 
-        const float l_dist   = l1distance_cuda(img(x, y), img(nx, y + dy));
+        const float l_dist   = minus_abs(img(x, y), img(nx, y + dy));
         const float cur_dist = D(nx, y + dy) + l_eucl * local_dist2d[dx + 1] + l_grad * l_dist;
         new_dist             = std::min(new_dist, cur_dist);
       }
@@ -100,11 +100,14 @@ namespace dt
   }
 
   void geodesic_distance_transform(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
-                                   image2d_view<float>& D, float v, float l_grad, float l_eucl, int iterations)
+                                   image2d_view<float>& D, float v, float lambda, int iterations)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && D.memory_kind() == e_memory_kind::GPU);
+    assert(lambda >= 0 && lambda <= 1);
+    const float l_grad = lambda;
+    const float l_eucl = 1 - lambda;
 
     const float local_dist[] = {std::sqrt(2.f), 1.f, std::sqrt(2.f)};
     cudaMemcpyToSymbol(local_dist2d, local_dist, 3 * sizeof(float));
@@ -128,13 +131,13 @@ namespace dt
   }
 
   image2d<float> geodesic_distance_transform(const image2d_view<std::uint8_t>& img,
-                                             const image2d_view<std::uint8_t>& mask, float v, float l_grad,
-                                             float l_eucl, int iterations)
+                                             const image2d_view<std::uint8_t>& mask, float v, float lambda,
+                                             int iterations)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    geodesic_distance_transform(img, mask, D, v, l_grad, l_eucl, iterations);
+    geodesic_distance_transform(img, mask, D, v, lambda, iterations);
     return D;
   }
 } // namespace dt

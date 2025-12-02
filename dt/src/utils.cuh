@@ -8,12 +8,6 @@
 
 namespace dt
 {
-  // https://github.com/masadcv/FastGeodis/blob/0f6cc1e6e104bee56e6eb9dfdd2cfd29c21a1a3e/FastGeodis/fastgeodis_cuda.cu#L50C1-L53C2
-  __forceinline__ __device__ float l1distance_cuda(const float& in1, const float& in2)
-  {
-    return abs(in1 - in2);
-  }
-
   __global__ void init(const image2d_view<std::uint8_t>& m, image2d_view<std::uint32_t>& D,
                        image2d_view<std::uint8_t>& F);
 

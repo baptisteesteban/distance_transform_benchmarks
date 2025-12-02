@@ -16,4 +16,16 @@ namespace dt
       out << std::format("{:3}]\n", img(img.width() - 1, y));
     }
   }
+
+  template <>
+  void imprint<float>(const image2d_view<float>& img, std::ostream& out)
+  {
+    for (int y = 0; y < img.height(); y++)
+    {
+      out << '[';
+      for (int x = 0; x < img.width() - 1; x++)
+        out << std::format("{:.5f} ", img(x, y));
+      out << std::format("{:.5f}]\n", img(img.width() - 1, y));
+    }
+  }
 } // namespace dt
