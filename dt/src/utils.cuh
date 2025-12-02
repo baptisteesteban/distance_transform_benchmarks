@@ -8,6 +8,18 @@
 
 namespace dt
 {
+  static constexpr int BLOCK_SIZE = 32;
+  static constexpr int TILE_SIZE  = BLOCK_SIZE + 2; // Halo of 2 to handle border values
+
+  enum e_block_changed_mask
+  {
+    BLOCK_CHANGED_LEFT   = 1,
+    BLOCK_CHANGED_RIGHT  = 2,
+    BLOCK_CHANGED_TOP    = 4,
+    BLOCK_CHANGED_BOTTOM = 8,
+    BLOCK_CHANGED_ANY    = 16
+  };
+
   __global__ void init(const image2d_view<std::uint8_t>& m, image2d_view<std::uint32_t>& D,
                        image2d_view<std::uint8_t>& F);
 

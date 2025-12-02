@@ -6,19 +6,6 @@
 
 namespace dt
 {
-  static constexpr int BLOCK_SIZE = 32;
-  static constexpr int TILE_SIZE  = BLOCK_SIZE + 2; // Halo of 2 to handle border values
-  static constexpr int WINDOW     = 1;              // 0 or 1 (if > 1 memory error)
-
-  enum e_block_changed_mask
-  {
-    BLOCK_CHANGED_LEFT   = 1,
-    BLOCK_CHANGED_RIGHT  = 2,
-    BLOCK_CHANGED_TOP    = 4,
-    BLOCK_CHANGED_BOTTOM = 8,
-    BLOCK_CHANGED_ANY    = 16
-  };
-
   // Top -> Bottom
   template <bool Forward>
   __device__ int pass_T(const std::uint8_t m[][TILE_SIZE], const std::uint8_t M[][TILE_SIZE],
@@ -34,7 +21,7 @@ namespace dt
 
     for (int y = start_y; y != end_y; y += inc)
     {
-      for (int dx = -WINDOW; dx < WINDOW + 1; ++dx)
+      for (int dx = -1; dx < 2; ++dx)
       {
         const std::uint8_t  q     = clamp(F[y + dy][x + dx], m[y][x], M[y][x]);
         const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
@@ -71,7 +58,7 @@ namespace dt
 
     for (int x = start_x; x != end_x; x += inc)
     {
-      for (int dy = -WINDOW; dy < WINDOW + 1; ++dy)
+      for (int dy = -1; dy < 2; ++dy)
       {
         const std::uint8_t  q     = clamp(F[y + dy][x + dx], m[y][x], M[y][x]);
         const std::uint32_t new_d = D[y + dy][x + dx] + minus_abs<std::uint32_t>(F[y + dy][x + dx], q);
