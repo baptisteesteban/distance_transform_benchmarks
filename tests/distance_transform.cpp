@@ -273,7 +273,7 @@ TEST(DistanceTransform, EuclidianFastGeodis)
 
   auto       d_img  = dt::host_to_device(img);
   auto       d_mask = dt::host_to_device(mask);
-  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 0.0, 100);
+  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 0.0);
   const auto dist   = dt::device_to_host(d_dist);
 
   ASSERT_IMAGES_EQ(dist, ref_dist);
@@ -468,7 +468,7 @@ TEST(DistanceTransform, GeodesicFastGeodis)
 
   auto       d_img  = dt::host_to_device(img);
   auto       d_mask = dt::host_to_device(mask);
-  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 1.0, 100);
+  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 1.0);
   const auto dist   = dt::device_to_host(d_dist);
 
   ASSERT_IMAGES_EQ(dist, ref_dist);

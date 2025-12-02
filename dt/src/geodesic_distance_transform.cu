@@ -13,7 +13,8 @@ namespace dt
 {
   // Left -> Right
   template <bool Forward>
-  __global__ static void pass(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float l_grad, float l_eucl)
+  __global__ static void pass(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float l_grad, float l_eucl,
+                              bool* changed)
   {
     const int     start_x = Forward ? 1 : img.width() - 2;
     const int     end_x   = Forward ? img.width() : -1;
@@ -44,7 +45,10 @@ namespace dt
       }
 
       if (new_dist < D(x, y))
-        D(x, y) = new_dist;
+      {
+        D(x, y)  = new_dist;
+        *changed = true;
+      }
 
       __syncthreads();
     }
@@ -53,7 +57,7 @@ namespace dt
   // Top -> Down
   template <bool Forward>
   __global__ static void pass_T(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float l_grad,
-                                float l_eucl)
+                                float l_eucl, bool* changed)
   {
     const int     start_y = Forward ? 1 : img.height() - 2;
     const int     end_y   = Forward ? img.height() : -1;
@@ -83,7 +87,10 @@ namespace dt
       }
 
       if (new_dist < D(x, y))
-        D(x, y) = new_dist;
+      {
+        D(x, y)  = new_dist;
+        *changed = true;
+      }
 
       __syncthreads();
     }
@@ -100,7 +107,7 @@ namespace dt
   }
 
   void geodesic_distance_transform(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
-                                   image2d_view<float>& D, float v, float lambda, int iterations)
+                                   image2d_view<float>& D, float v, float lambda)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
@@ -120,24 +127,27 @@ namespace dt
 
     const int n_blocks_w = (img.width() + N_THREADS - 1) / N_THREADS;
     const int n_blocks_h = (img.height() + N_THREADS - 1) / N_THREADS;
-    for (int i = 0; i < iterations; i++)
+    bool*     changed;
+    cudaMallocManaged(&changed, sizeof(bool));
+    *changed = true;
+    while (*changed)
     {
-      pass<true><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl);
-      pass<false><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl);
-      pass_T<true><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl);
-      pass_T<false><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl);
+      *changed = false;
+      pass<true><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
+      pass<false><<<n_blocks_h, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
+      pass_T<true><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
+      pass_T<false><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
       cudaDeviceSynchronize();
     }
   }
 
   image2d<float> geodesic_distance_transform(const image2d_view<std::uint8_t>& img,
-                                             const image2d_view<std::uint8_t>& mask, float v, float lambda,
-                                             int iterations)
+                                             const image2d_view<std::uint8_t>& mask, float v, float lambda)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    geodesic_distance_transform(img, mask, D, v, lambda, iterations);
+    geodesic_distance_transform(img, mask, D, v, lambda);
     return D;
   }
 } // namespace dt
