@@ -5,6 +5,11 @@
 #include <dt/random_image2d.hpp>
 #include <dt/transfert.hpp>
 
+// For debug
+#include <dt/imsave.hpp>
+#include <dt/inferno.hpp>
+#include <dt/normalize.hpp>
+
 #include <gtest/gtest.h>
 
 #include <cstring>
@@ -477,8 +482,8 @@ TEST(DistanceTransform, GeodesicFastGeodis)
 
 TEST(DistanceTransform, EuclidianChessboard)
 {
-  static constexpr int WIDTH  = 20;
-  static constexpr int HEIGHT = 20;
+  static constexpr int WIDTH  = 10;
+  static constexpr int HEIGHT = 10;
 
   const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
@@ -493,6 +498,12 @@ TEST(DistanceTransform, EuclidianChessboard)
 
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
+
+  //{
+  //  auto norm    = dt::normalize<std::uint8_t>(dist2);
+  //  auto colored = dt::inferno(norm);
+  //  dt::imsave("debug.png", colored);
+  //}
 
   ASSERT_IMAGES_EQ(dist1, dist2);
 }

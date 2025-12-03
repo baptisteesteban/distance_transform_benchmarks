@@ -5,8 +5,8 @@
 
 namespace dt
 {
-  __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float l_eucl,
-                                           float l_grad, bool even, bool* active, bool* changed)
+  __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float v,
+                                           float l_eucl, float l_grad, bool even, bool* active, bool* changed)
   {
     const int bx  = blockIdx.x;
     const int by  = blockIdx.y;
@@ -45,9 +45,9 @@ namespace dt
           s_img[ty][tx] = valid ? img(gx, gy) : 0; // TODO: Verify
           if ((tx == 0 && ty == 0) || (tx == 0 && ty == TILE_SIZE - 1) || (tx == TILE_SIZE - 1 && ty == 0) ||
               (tx == TILE_SIZE - 1 && ty == TILE_SIZE - 1)) // Handling corners
-            s_D[ty][tx] = std::numeric_limits<float>::max() / 2;
+            s_D[ty][tx] = v;
           else
-            s_D[ty][tx] = valid ? D(gx, gy) : 0;
+            s_D[ty][tx] = valid ? D(gx, gy) : v;
         }
       }
     }
@@ -136,7 +136,6 @@ namespace dt
     const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
-    bool      even = false;
     bool*     active;
     cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
     cudaMemset(active, 0xFF, grid_width * grid_height * sizeof(bool));
@@ -144,8 +143,8 @@ namespace dt
     while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, l_eucl, l_grad, even, active, changed);
-      even = !even;
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed);
       cudaDeviceSynchronize();
     }
     cudaFree(active);

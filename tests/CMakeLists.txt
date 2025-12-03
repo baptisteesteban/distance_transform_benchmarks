@@ -21,3 +21,4 @@ if (BUILD_IO)
     target_link_libraries(test_io PRIVATE dt::io)
 endif(BUILD_IO)
 my_add_test(distance_transform)
+#target_link_libraries(test_distance_transform PRIVATE dt::io) # For debug
