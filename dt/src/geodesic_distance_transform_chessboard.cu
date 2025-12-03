@@ -18,8 +18,6 @@ namespace dt
       return;
     if (even && bx % 2 != by % 2)
       return;
-    if (!active[bid])
-      return;
 
     const int x = bx * BLOCK_SIZE;
     const int y = by * BLOCK_SIZE + threadIdx.x;
@@ -42,12 +40,8 @@ namespace dt
           const int gy = y + dty;
 
           bool valid    = gx >= 0 && gx < img.width() && gy >= 0 && gy < img.height();
-          s_img[ty][tx] = valid ? img(gx, gy) : 0; // TODO: Verify
-          if ((tx == 0 && ty == 0) || (tx == 0 && ty == TILE_SIZE - 1) || (tx == TILE_SIZE - 1 && ty == 0) ||
-              (tx == TILE_SIZE - 1 && ty == TILE_SIZE - 1)) // Handling corners
-            s_D[ty][tx] = v;
-          else
-            s_D[ty][tx] = valid ? D(gx, gy) : v;
+          s_img[ty][tx] = valid ? img(gx, gy) : 0;
+          s_D[ty][tx]   = valid ? D(gx, gy) : v;
         }
       }
     }
@@ -58,6 +52,7 @@ namespace dt
     if (threadIdx.x == 0)
       block_changed = 1;
     __syncthreads();
+
     while (block_changed)
     {
       __syncthreads();
@@ -66,31 +61,21 @@ namespace dt
       __syncthreads();
 
       int t_changed = 0;
-      t_changed |= pass<true>(s_img, s_D, D.width(), l_eucl, l_grad);
+      t_changed |= pass<true>(s_img, s_D, D.width(), D.height(), l_eucl, l_grad);
       __syncthreads();
-      // t_changed |= pass<false>(s_img, s_D, D.width(), l_eucl, l_grad);
-      //__syncthreads();
-      // t_changed |= pass_T<true>(s_img, s_D, D.height(), l_eucl, l_grad);
-      //__syncthreads();
-      // t_changed |= pass_T<false>(s_img, s_D, D.height(), l_eucl, l_grad);
-      //__syncthreads();
+      t_changed |= pass<false>(s_img, s_D, D.width(), D.height(), l_eucl, l_grad);
+      __syncthreads();
+      t_changed |= pass_T<true>(s_img, s_D, D.width(), D.height(), l_eucl, l_grad);
+      __syncthreads();
+      t_changed |= pass_T<false>(s_img, s_D, D.width(), D.height(), l_eucl, l_grad);
+      __syncthreads();
 
       if (t_changed)
         atomicOr_block(&block_changed, t_changed);
       __syncthreads();
-
       if (threadIdx.x == 0 && block_changed)
-      {
-        if (by > 0 && block_changed & BLOCK_CHANGED_TOP)
-          active[(by - 1) * gridDim.x + bx] = true;
-        if (by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM)
-          active[(by + 1) * gridDim.x + bx] = true;
-        if (bx > 0 && block_changed & BLOCK_CHANGED_LEFT)
-          active[by * gridDim.x + bx - 1] = true;
-        if (bx < gridDim.x - 1 && block_changed & BLOCK_CHANGED_RIGHT)
-          active[by * gridDim.x + bx + 1] = true;
         *changed = true;
-      }
+      __syncthreads();
     }
     __syncthreads();
 
@@ -103,8 +88,6 @@ namespace dt
           D(x + tx, y) = s_D[ty][tx + 1];
       }
     }
-    if (threadIdx.x == 0)
-      active[bid] = false;
     __syncthreads();
   }
 

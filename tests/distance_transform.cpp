@@ -499,11 +499,11 @@ TEST(DistanceTransform, EuclidianChessboard)
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
 
-  //{
-  //  auto norm    = dt::normalize<std::uint8_t>(dist2);
-  //  auto colored = dt::inferno(norm);
-  //  dt::imsave("debug.png", colored);
-  //}
+  {
+    auto norm    = dt::normalize<std::uint8_t>(dist2);
+    auto colored = dt::inferno(norm);
+    dt::imsave("debug.png", colored);
+  }
 
   ASSERT_IMAGES_EQ(dist1, dist2);
 }
