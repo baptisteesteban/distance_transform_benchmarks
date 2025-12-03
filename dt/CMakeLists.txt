@@ -22,6 +22,7 @@ target_sources(dt-core PRIVATE
     src/level_lines_distance_transform_task_priority.cu
     src/geodesic_distance_transform.cu
     src/geodesic_distance_transform_chessboard.cu
+    src/geodesic_distance_transform_task.cu
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)

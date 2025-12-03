@@ -484,13 +484,13 @@ TEST(DistanceTransform, GeodesicFastGeodis)
  * Experimental methods tests
  */
 
-static constexpr int WIDTH  = 250;
-static constexpr int HEIGHT = 230;
+static constexpr int RANDOM_WIDTH  = 250;
+static constexpr int RANDOM_HEIGHT = 230;
 
 TEST(DistanceTransform, EuclidianChessboard)
 {
-  const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
-  dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
+  const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
+  dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
   dt::fill(mask, std::uint8_t(1));
   mask(img.width() / 2, img.height() / 2) = 0;
 
@@ -514,8 +514,8 @@ TEST(DistanceTransform, EuclidianChessboard)
 
 TEST(DistanceTransform, GeodesicChessboard)
 {
-  const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
-  dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
+  const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
+  dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
   dt::fill(mask, std::uint8_t(1));
   mask(img.width() / 2, img.height() / 2) = 0;
 

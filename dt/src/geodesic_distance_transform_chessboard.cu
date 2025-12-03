@@ -148,8 +148,7 @@ namespace dt
     }
     cudaFree(changed);
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
-      throw std::runtime_error(
-          std::format("Error while running level lines distance transform: {}", cudaGetErrorString(err)));
+      throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
   }
 
   image2d<float> geodesic_distance_transform_chessboard(const image2d_view<std::uint8_t>& img,
