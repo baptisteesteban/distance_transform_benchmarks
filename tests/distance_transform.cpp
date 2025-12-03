@@ -482,8 +482,8 @@ TEST(DistanceTransform, GeodesicFastGeodis)
 
 TEST(DistanceTransform, EuclidianChessboard)
 {
-  static constexpr int WIDTH  = 10;
-  static constexpr int HEIGHT = 10;
+  static constexpr int WIDTH  = 50;
+  static constexpr int HEIGHT = 40;
 
   const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);

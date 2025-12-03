@@ -11,12 +11,14 @@ namespace dt
 
   // Top -> Bottom
   template <bool Forward>
-  __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], float l_eucl, float l_grad)
+  __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int height, float l_eucl,
+                        float l_grad)
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dy      = -1 * inc;
-    const int     start_y = Forward ? 1 : TILE_SIZE - 2;
-    const int     end_y   = Forward ? TILE_SIZE - 1 : 0;
+    const int     size    = std::min<int>((blockIdx.y + 1) * BLOCK_SIZE, height) - blockIdx.y * BLOCK_SIZE;
+    const int     start_y = Forward ? 1 : size;
+    const int     end_y   = Forward ? 1 + size : 0;
     const int     x       = threadIdx.x + 1;
 
     int line_changed = 0;
@@ -50,12 +52,13 @@ namespace dt
 
   // Left -> Right
   template <bool Forward>
-  __device__ int pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], float l_eucl, float l_grad)
+  __device__ int pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, float l_eucl, float l_grad)
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dx      = -1 * inc;
-    const int     start_x = Forward ? 1 : TILE_SIZE - 2;
-    const int     end_x   = Forward ? TILE_SIZE - 1 : 0;
+    const int     size    = std::min<int>((blockIdx.x + 1) * BLOCK_SIZE, width) - blockIdx.x * BLOCK_SIZE;
+    const int     start_x = Forward ? 1 : size;
+    const int     end_x   = Forward ? 1 + size : 0;
     const int     y       = threadIdx.x + 1;
 
     int line_changed = 0;

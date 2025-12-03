@@ -1,5 +1,7 @@
 #include <dt/image2d.hpp>
 
+#include <iostream>
+
 #include "dt_block_passes.cuh"
 #include "utils.cuh"
 
@@ -27,8 +29,6 @@ namespace dt
     __shared__ float        s_D[TILE_SIZE][TILE_SIZE];
 
     {
-      // Here, x and y denote the start of the block line in memory
-
       // tx and ty are the tile indices
       for (int tx = 0; tx < TILE_SIZE; ++tx)
       {
@@ -60,19 +60,20 @@ namespace dt
     __syncthreads();
     while (block_changed)
     {
+      __syncthreads();
       if (threadIdx.x == 0)
         block_changed = 0;
       __syncthreads();
 
       int t_changed = 0;
-      t_changed |= pass<true>(s_img, s_D, l_eucl, l_grad);
+      t_changed |= pass<true>(s_img, s_D, D.width(), l_eucl, l_grad);
       __syncthreads();
-      t_changed |= pass<false>(s_img, s_D, l_eucl, l_grad);
-      __syncthreads();
-      t_changed |= pass_T<true>(s_img, s_D, l_eucl, l_grad);
-      __syncthreads();
-      t_changed |= pass_T<false>(s_img, s_D, l_eucl, l_grad);
-      __syncthreads();
+      // t_changed |= pass<false>(s_img, s_D, D.width(), l_eucl, l_grad);
+      //__syncthreads();
+      // t_changed |= pass_T<true>(s_img, s_D, D.height(), l_eucl, l_grad);
+      //__syncthreads();
+      // t_changed |= pass_T<false>(s_img, s_D, D.height(), l_eucl, l_grad);
+      //__syncthreads();
 
       if (t_changed)
         atomicOr_block(&block_changed, t_changed);
@@ -90,8 +91,8 @@ namespace dt
           active[by * gridDim.x + bx + 1] = true;
         *changed = true;
       }
-      __syncthreads();
     }
+    __syncthreads();
 
     // Loading tile into global memory
     {
@@ -140,11 +141,13 @@ namespace dt
     cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
     cudaMemset(active, 0xFF, grid_width * grid_height * sizeof(bool));
 
-    while (*changed)
+    int nround = 0;
+    while (*changed /*&& nround < 5*/)
     {
       *changed = false;
       block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed);
       block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed);
+      nround += 1;
       cudaDeviceSynchronize();
     }
     cudaFree(active);
