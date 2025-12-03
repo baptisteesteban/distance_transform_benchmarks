@@ -2,6 +2,7 @@
 #include <dt/geodesic_distance_transform.hpp>
 #include <dt/image2d_view.hpp>
 #include <dt/imprint.hpp>
+#include <dt/random_image2d.hpp>
 #include <dt/transfert.hpp>
 
 #include <gtest/gtest.h>
@@ -472,4 +473,26 @@ TEST(DistanceTransform, GeodesicFastGeodis)
   const auto dist   = dt::device_to_host(d_dist);
 
   ASSERT_IMAGES_EQ(dist, ref_dist);
+}
+
+TEST(DistanceTransform, EuclidianChessboard)
+{
+  static constexpr int WIDTH  = 20;
+  static constexpr int HEIGHT = 20;
+
+  const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
+  dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
+  dt::fill(mask, std::uint8_t(1));
+  mask(img.width() / 2, img.height() / 2) = 0;
+
+  auto d_img  = dt::host_to_device(img);
+  auto d_mask = dt::host_to_device(mask);
+
+  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1e10f, 0.0f);
+  const auto d_dist2 = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 1e10f, 0.0f);
+
+  const auto dist1 = dt::device_to_host(d_dist1);
+  const auto dist2 = dt::device_to_host(d_dist2);
+
+  ASSERT_IMAGES_EQ(dist1, dist2);
 }
