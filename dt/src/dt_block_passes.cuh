@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include <cstdint>
 
 #include "utils.cuh"
@@ -11,8 +10,8 @@ namespace dt
 
   // Left -> Right
   template <bool Forward>
-  __device__ bool pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
-                       float l_grad)
+  __device__ int pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
+                      float l_grad)
   {
     const int block_start = blockIdx.x * blockDim.x;
     const int block_end   = std::min<int>((blockIdx.x + 1) * blockDim.x, width);
@@ -27,7 +26,7 @@ namespace dt
     const int  y      = blockIdx.y * blockDim.x + threadIdx.x;
     const bool active = y < height;
 
-    bool line_changed = false;
+    int line_changed = 0;
 
     for (int tx = start_x; tx != end_x; tx += inc)
     {
@@ -43,8 +42,13 @@ namespace dt
 
         if (new_dist < D[ty][tx])
         {
-          line_changed = true;
-          D[ty][tx]    = new_dist;
+          D[ty][tx] = new_dist;
+
+          line_changed |= BLOCK_CHANGED_ANY;
+          line_changed |= (ty == 1) * BLOCK_CHANGED_TOP;
+          line_changed |= (ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
+          line_changed |= (tx == 1) * BLOCK_CHANGED_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
         }
       }
       __syncthreads();
@@ -54,8 +58,8 @@ namespace dt
 
   // Left -> Right
   template <bool Forward>
-  __device__ bool pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
-                         float l_grad)
+  __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
+                        float l_grad)
   {
     const int block_start  = blockIdx.y * blockDim.x;
     const int block_end    = std::min<int>((blockIdx.y + 1) * blockDim.x, height);
@@ -70,7 +74,7 @@ namespace dt
     const int  x      = blockIdx.x * blockDim.x + threadIdx.x;
     const bool active = x < width;
 
-    bool line_changed = false;
+    int line_changed = 0;
 
     for (int ty = start_y; ty != end_y; ty += inc)
     {
@@ -86,8 +90,13 @@ namespace dt
 
         if (new_dist < D[ty][tx])
         {
-          line_changed = true;
-          D[ty][tx]    = new_dist;
+          D[ty][tx] = new_dist;
+
+          line_changed |= BLOCK_CHANGED_ANY;
+          line_changed |= (ty == 1) * BLOCK_CHANGED_TOP;
+          line_changed |= (ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
+          line_changed |= (tx == 1) * BLOCK_CHANGED_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
         }
       }
       __syncthreads();

@@ -480,11 +480,15 @@ TEST(DistanceTransform, GeodesicFastGeodis)
   ASSERT_IMAGES_EQ(dist, ref_dist);
 }
 
+/*
+ * Experimental methods tests
+ */
+
+static constexpr int WIDTH  = 250;
+static constexpr int HEIGHT = 230;
+
 TEST(DistanceTransform, EuclidianChessboard)
 {
-  static constexpr int WIDTH  = 50;
-  static constexpr int HEIGHT = 40;
-
   const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
   dt::fill(mask, std::uint8_t(1));
@@ -510,9 +514,6 @@ TEST(DistanceTransform, EuclidianChessboard)
 
 TEST(DistanceTransform, GeodesicChessboard)
 {
-  static constexpr int WIDTH  = 50;
-  static constexpr int HEIGHT = 40;
-
   const auto                img = dt::random_image2d<std::uint8_t>(WIDTH, HEIGHT);
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
   dt::fill(mask, std::uint8_t(1));

@@ -1,7 +1,5 @@
 #include <dt/image2d.hpp>
 
-#include <iostream>
-
 #include "dt_block_passes.cuh"
 #include "utils.cuh"
 
@@ -17,6 +15,8 @@ namespace dt
     if (!even && bx % 2 == by % 2)
       return;
     if (even && bx % 2 != by % 2)
+      return;
+    if (!active[bid])
       return;
 
     const int x = bx * BLOCK_SIZE;
@@ -50,7 +50,10 @@ namespace dt
     // Block level distance transform
     __shared__ int block_changed;
     if (threadIdx.x == 0)
+    {
       block_changed = 1;
+      active[bid]   = false;
+    }
     __syncthreads();
 
     while (block_changed)
@@ -73,9 +76,19 @@ namespace dt
       if (t_changed)
         atomicOr_block(&block_changed, t_changed);
       __syncthreads();
+
       if (threadIdx.x == 0 && block_changed)
+      {
         *changed = true;
-      __syncthreads();
+        if (by > 0 && block_changed & BLOCK_CHANGED_TOP)
+          active[(by - 1) * gridDim.x + bx] = true;
+        if (by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM)
+          active[(by + 1) * gridDim.x + bx] = true;
+        if (bx > 0 && block_changed & BLOCK_CHANGED_LEFT)
+          active[by * gridDim.x + bx - 1] = true;
+        if (bx < gridDim.x - 1 && block_changed & BLOCK_CHANGED_RIGHT)
+          active[by * gridDim.x + bx + 1] = true;
+      }
     }
     __syncthreads();
 
@@ -121,12 +134,15 @@ namespace dt
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
 
-    int nround = 0;
+    int   nround = 0;
+    bool* active;
+    cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
+    cudaMemset(active, true, grid_width * grid_height * sizeof(bool));
     while (*changed /*&& nround < 5*/)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, nullptr /*active*/, changed);
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, nullptr /*active*/, changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed);
       nround += 1;
       cudaDeviceSynchronize();
     }
