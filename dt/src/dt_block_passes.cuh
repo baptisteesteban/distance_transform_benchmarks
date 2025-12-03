@@ -33,10 +33,13 @@ namespace dt
     {
       if (active)
       {
-        float       new_dist = D[ty][tx];
-        const float l_dist   = minus_abs(img[ty][tx], img[ty][tx + dx]);
-        const float cur_dist = D[ty][tx + dx] + l_eucl * local_dist2d[1] + l_grad * l_dist;
-        new_dist             = std::min(new_dist, cur_dist);
+        float new_dist = D[ty][tx];
+        for (int dy = -1; dy < 2; dy++)
+        {
+          const float l_dist   = minus_abs(img[ty][tx], img[ty + dy][tx + dx]);
+          const float cur_dist = D[ty + dy][tx + dx] + l_eucl * local_dist2d[dy + 1] + l_grad * l_dist;
+          new_dist             = std::min(new_dist, cur_dist);
+        }
 
         if (new_dist < D[ty][tx])
         {
@@ -73,10 +76,13 @@ namespace dt
     {
       if (active)
       {
-        float       new_dist = D[ty][tx];
-        const float l_dist   = minus_abs(img[ty][tx], img[ty + dy][tx]);
-        const float cur_dist = D[ty + dy][tx] + l_eucl * local_dist2d[1] + l_grad * l_dist;
-        new_dist             = std::min(new_dist, cur_dist);
+        float new_dist = D[ty][tx];
+        for (int dx = -1; dx < 2; dx++)
+        {
+          const float l_dist   = minus_abs(img[ty][tx], img[ty + dy][tx + dx]);
+          const float cur_dist = D[ty + dy][tx + dx] + l_eucl * local_dist2d[dx + 1] + l_grad * l_dist;
+          new_dist             = std::min(new_dist, cur_dist);
+        }
 
         if (new_dist < D[ty][tx])
         {

@@ -120,20 +120,16 @@ namespace dt
     const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
-    bool*     active;
-    cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
-    cudaMemset(active, 0xFF, grid_width * grid_height * sizeof(bool));
 
     int nround = 0;
     while (*changed /*&& nround < 5*/)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed);
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, nullptr /*active*/, changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, nullptr /*active*/, changed);
       nround += 1;
       cudaDeviceSynchronize();
     }
-    cudaFree(active);
     cudaFree(changed);
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(
