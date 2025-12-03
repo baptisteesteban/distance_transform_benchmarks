@@ -11,7 +11,7 @@ namespace dt
 
   // Top -> Bottom
   template <bool Forward>
-  __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], std::uint32_t D[][TILE_SIZE], float l_eucl, float l_grad)
+  __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], float l_eucl, float l_grad)
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dy      = -1 * inc;
@@ -50,7 +50,7 @@ namespace dt
 
   // Left -> Right
   template <bool Forward>
-  __device__ int pass(const std::uint8_t img[][TILE_SIZE], std::uint32_t D[][TILE_SIZE], float l_eucl, float l_grad)
+  __device__ int pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], float l_eucl, float l_grad)
   {
     constexpr int inc     = Forward ? 1 : -1;
     constexpr int dx      = -1 * inc;
@@ -67,7 +67,7 @@ namespace dt
       for (int dy = -1; dy < 2; ++dy)
       {
         const float l_dist   = minus_abs(img[y][x], img[y + dy][x + dx]);
-        const float cur_dist = D[y + dy][x + dx] + l_eucl * local_dist2d[dx + 1] + l_grad * l_dist;
+        const float cur_dist = D[y + dy][x + dx] + l_eucl * local_dist2d[dy + 1] + l_grad * l_dist;
         new_dist             = std::min(new_dist, cur_dist);
       }
 

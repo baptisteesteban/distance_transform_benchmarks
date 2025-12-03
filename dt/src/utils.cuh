@@ -25,6 +25,9 @@ namespace dt
 
   __global__ void initialize_task_queue(DeviceTaskQueue q);
 
+  __global__ void initialize_geodesic_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
+                                                   float v);
+
   __forceinline__ __device__ std::uint8_t clamp(std::uint8_t v, std::uint8_t m, std::uint8_t M)
   {
     return v < m ? m : (v > M ? M : v);

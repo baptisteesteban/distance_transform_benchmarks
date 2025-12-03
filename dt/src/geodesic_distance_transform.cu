@@ -96,16 +96,6 @@ namespace dt
     }
   }
 
-  __global__ static void initialize_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
-                                                 float v)
-  {
-    const int x = blockDim.x * blockIdx.x + threadIdx.x;
-    const int y = blockDim.y * blockIdx.y + threadIdx.y;
-
-    if (x < D.width() && y < D.height())
-      D(x, y) = v * (mask(x, y) > 0);
-  }
-
   void geodesic_distance_transform(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
                                    image2d_view<float>& D, float v, float lambda)
   {
@@ -122,7 +112,8 @@ namespace dt
     {
       dim3 gridDim((D.width() + 31) / 32, (D.height() + 31) / 32);
       dim3 blockDim(32, 32);
-      initialize_distance_map<<<gridDim, blockDim>>>(mask, D, v);
+      initialize_geodesic_distance_map<<<gridDim, blockDim>>>(mask, D, v);
+      cudaDeviceSynchronize();
     }
 
     const int n_blocks_w = (img.width() + N_THREADS - 1) / N_THREADS;
@@ -139,6 +130,10 @@ namespace dt
       pass_T<false><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
       cudaDeviceSynchronize();
     }
+    cudaFree(changed);
+    if (const auto err = cudaGetLastError(); err != cudaSuccess)
+      throw std::runtime_error(
+          std::format("Error while running level lines distance transform: {}", cudaGetErrorString(err)));
   }
 
   image2d<float> geodesic_distance_transform(const image2d_view<std::uint8_t>& img,
