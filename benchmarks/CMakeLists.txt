@@ -5,3 +5,6 @@ target_link_libraries(bench_immersion PRIVATE dt::io benchmark::benchmark_main)
 
 add_executable(bench_level_lines_distance_transform level_lines_distance_transform.cpp)
 target_link_libraries(bench_level_lines_distance_transform PRIVATE dt::io benchmark::benchmark_main)
+
+add_executable(bench_distance_transform distance_transform.cpp)
+target_link_libraries(bench_distance_transform PRIVATE dt::io benchmark::benchmark_main)
