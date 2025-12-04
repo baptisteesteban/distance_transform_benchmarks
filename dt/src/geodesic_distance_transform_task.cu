@@ -66,13 +66,13 @@ namespace dt
 
       // TODO: take into account value not available in block processing
       int t_changed = 0;
-      t_changed |= pass<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
+      t_changed |= pass<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by, grid_width);
       __syncthreads();
-      t_changed |= pass<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
+      t_changed |= pass<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by, grid_width);
       __syncthreads();
-      t_changed |= pass_T<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
+      t_changed |= pass_T<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by, grid_height);
       __syncthreads();
-      t_changed |= pass_T<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
+      t_changed |= pass_T<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by, grid_height);
       __syncthreads();
 
       if (t_changed)
