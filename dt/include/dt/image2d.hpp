@@ -14,6 +14,11 @@ namespace dt
   class image2d final : public image2d_view<T>
   {
   public:
+    image2d()                          = default;
+    image2d(const image2d&)            = default;
+    image2d(image2d&&)                 = default;
+    image2d& operator=(const image2d&) = default;
+    image2d& operator=(image2d&&)      = default;
     image2d(int width, int height, e_memory_kind memory_kind = e_memory_kind::CPU);
 
   private:

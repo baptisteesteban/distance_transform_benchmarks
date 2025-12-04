@@ -101,14 +101,14 @@ namespace dt
   {
   public:
     // Constructors
-    image2d_view() noexcept;
+    image2d_view() noexcept = default;
     image2d_view(T* buffer, int width, int height, int pitch, e_memory_kind memory_kind = e_memory_kind::CPU) noexcept;
-    image2d_view(const image2d_view<T>& other) noexcept;
-    image2d_view(image2d_view<T>&& other) noexcept;
+    image2d_view(const image2d_view<T>& other) noexcept = default;
+    image2d_view(image2d_view<T>&& other) noexcept      = default;
 
     // Assignment operators
-    image2d_view<T>& operator=(const image2d_view<T>& other) noexcept;
-    image2d_view<T>& operator=(image2d_view<T>&& other) noexcept;
+    image2d_view<T>& operator=(const image2d_view<T>& other) noexcept = default;
+    image2d_view<T>& operator=(image2d_view<T>&& other) noexcept      = default;
 
 // Accessors
 #ifdef __CUDACC__
@@ -226,41 +226,9 @@ namespace dt
   }
 
   template <typename T>
-  image2d_view<T>::image2d_view() noexcept
-    : image2d_view<void>()
-  {
-  }
-
-  template <typename T>
   image2d_view<T>::image2d_view(T* buffer, int width, int height, int pitch, e_memory_kind memory_kind) noexcept
     : image2d_view<void>((std::uint8_t*)buffer, width, height, pitch, sizeof(T), memory_kind)
   {
-  }
-
-  template <typename T>
-  image2d_view<T>::image2d_view(const image2d_view<T>& other) noexcept
-    : image2d_view<void>(other)
-  {
-  }
-
-  template <typename T>
-  image2d_view<T>::image2d_view(image2d_view<T>&& other) noexcept
-    : image2d_view<void>(other)
-  {
-  }
-
-  template <typename T>
-  image2d_view<T>& image2d_view<T>::operator=(const image2d_view<T>& other) noexcept
-  {
-    *this = other;
-    return *this;
-  }
-
-  template <typename T>
-  image2d_view<T>& image2d_view<T>::operator=(image2d_view<T>&& other) noexcept
-  {
-    *this = std::move(other);
-    return *this;
   }
 
 

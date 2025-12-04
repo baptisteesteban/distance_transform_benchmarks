@@ -1,3 +1,4 @@
+#include <dt/geodesic_distance_transform.hpp>
 #include <dt/imread.hpp>
 #include <dt/transfert.hpp>
 
@@ -8,9 +9,11 @@
 #include <format>
 #include <iostream>
 
+static constexpr auto TIME_UNIT = benchmark::kMillisecond;
+
 // Image loading
 
-static constexpr const char* IMAGES_DIR = "";
+static constexpr const char* IMAGES_DIR = "/data/condat/gray_png";
 
 static std::vector<std::filesystem::path> bench_filenames;
 
@@ -47,12 +50,19 @@ class DistanceTransformFixture : public benchmark::Fixture
 public:
   void SetUp(benchmark::State& state) override
   {
+    // Reading image
     const int  image_id = state.range(0);
     const auto filename = bench_filenames[image_id].c_str();
     state.SetLabel(filename);
-    auto img = dt::imread<std::atomic_uint8_t>(filename);
+    auto img = dt::imread<std::uint8_t>(filename);
     m_img    = dt::image2d<std::uint8_t>(img.width(), img.height(), dt::e_memory_kind::GPU);
     dt::host_to_device(img, m_img);
+
+    // Generating dummy mask
+    dt::image2d<std::uint8_t> mask(img.width(), img.height());
+    mask(img.width() / 2, img.height() / 2) = 0;
+    m_mask = dt::image2d<std::uint8_t>(img.width(), img.height(), dt::e_memory_kind::GPU);
+    dt::host_to_device(mask, m_mask);
   }
 
   void run(benchmark::State& state)
@@ -69,6 +79,12 @@ public:
       cudaEventSynchronize(stop);
       cudaEventElapsedTime(&milliseconds, start, stop);
       state.SetIterationTime(milliseconds / 1000.0);
+
+      if (auto err = cudaGetLastError(); err != cudaSuccess)
+      {
+        std::cerr << std::format("Failed to run benchmark due to CUDA error: {}\n", cudaGetErrorString(err));
+        std::abort();
+      }
     }
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
@@ -87,11 +103,43 @@ public:
 
   int size() const { return m_img.width() * m_img.height(); }
 
-private:
+protected:
   dt::image2d<std::uint8_t> m_img;
+  dt::image2d<std::uint8_t> m_mask;
+};
+
+struct BMDistanceTransformGeos : public DistanceTransformFixture
+{
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, 1e10, 1.0); }
+};
+
+struct BMDistanceTransformChessboard : public DistanceTransformFixture
+{
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, 1e10, 1.0); }
 };
 
 // Main
+BENCHMARK_DEFINE_F(BMDistanceTransformGeos, BMDistanceTransformGeos)(benchmark::State& state)
+{
+  run(state);
+}
+
+BENCHMARK_DEFINE_F(BMDistanceTransformChessboard, BMDistanceTransformChessboard)(benchmark::State& state)
+{
+  run(state);
+}
+
+BENCHMARK_REGISTER_F(BMDistanceTransformGeos, BMDistanceTransformGeos)
+    ->Apply(build_argument)
+    ->Unit(TIME_UNIT)
+    ->UseManualTime()
+    ->Name("DistanceTransformGeos");
+
+BENCHMARK_REGISTER_F(BMDistanceTransformChessboard, BMDistanceTransformChessboard)
+    ->Apply(build_argument)
+    ->Unit(TIME_UNIT)
+    ->UseManualTime()
+    ->Name("DistanceTransformGeos");
 
 int main(int argc, char* argv[])
 {
