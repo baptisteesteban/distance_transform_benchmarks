@@ -17,13 +17,15 @@ namespace dt
       bx = blockIdx.x;
     if (by < 0)
       by = blockIdx.y;
+
+    const int gx          = (width + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const int block_start = bx * BLOCK_SIZE;
     const int block_end   = std::min<int>((bx + 1) * BLOCK_SIZE, width);
     const int block_width = block_end - block_start;
 
     constexpr int dx      = Forward ? -1 : 1;
     constexpr int inc     = -1 * dx;
-    const int     start_x = Forward ? 1 + (block_start == 0) : block_width - (bx == gridDim.x - 1); // TODO: modify
+    const int     start_x = Forward ? 1 + (block_start == 0) : block_width - (bx == gx - 1);
     const int     end_x   = Forward ? 1 + block_width : 0;
 
     const int  ty     = threadIdx.x + 1;
@@ -70,13 +72,14 @@ namespace dt
     if (by < 0)
       by = blockIdx.y;
 
+    const int gy           = (height + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const int block_start  = by * BLOCK_SIZE;
     const int block_end    = std::min<int>((by + 1) * BLOCK_SIZE, height);
     const int block_height = block_end - block_start;
 
     constexpr int dy      = Forward ? -1 : 1;
     constexpr int inc     = -1 * dy;
-    const int     start_y = Forward ? 1 + (block_start == 0) : block_height - (by == gridDim.y - 1);
+    const int     start_y = Forward ? 1 + (block_start == 0) : block_height - (by == gy - 1);
     const int     end_y   = Forward ? 1 + block_height : 0;
 
     const int  tx     = threadIdx.x + 1;

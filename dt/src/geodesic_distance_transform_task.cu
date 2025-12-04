@@ -66,13 +66,13 @@ namespace dt
 
       // TODO: take into account value not available in block processing
       int t_changed = 0;
-      t_changed |= pass<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      t_changed |= pass<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
       __syncthreads();
-      t_changed |= pass<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      t_changed |= pass<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
       __syncthreads();
-      t_changed |= pass_T<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      t_changed |= pass_T<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
       __syncthreads();
-      t_changed |= pass_T<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      t_changed |= pass_T<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad, bx, by);
       __syncthreads();
 
       if (t_changed)
@@ -128,7 +128,7 @@ namespace dt
     {
       for (int k = 0; k < WORKER_JOB_SIZE; k++)
       {
-        if (/* TODO: Block propagation job */ true)
+        if (!block_propagation_job(img, D, l_grad, l_eucl, tq))
           break;
         __syncthreads();
       }
