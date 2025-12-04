@@ -97,7 +97,7 @@ namespace dt
   }
 
   void geodesic_distance_transform(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
-                                   image2d_view<float>& D, float v, float lambda)
+                                   image2d_view<float>& D, float lambda, float v)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
@@ -136,12 +136,12 @@ namespace dt
   }
 
   image2d<float> geodesic_distance_transform(const image2d_view<std::uint8_t>& img,
-                                             const image2d_view<std::uint8_t>& mask, float v, float lambda)
+                                             const image2d_view<std::uint8_t>& mask, float lambda, float v)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    geodesic_distance_transform(img, mask, D, v, lambda);
+    geodesic_distance_transform(img, mask, D, lambda, v);
     return D;
   }
 } // namespace dt

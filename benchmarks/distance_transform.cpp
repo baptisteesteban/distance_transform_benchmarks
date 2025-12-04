@@ -110,12 +110,12 @@ protected:
 
 struct BMDistanceTransformGeos : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, 1e10, 1.0); }
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, 1.0); }
 };
 
 struct BMDistanceTransformChessboard : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, 1e10, 1.0); }
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, 1.0); }
 };
 
 // Main

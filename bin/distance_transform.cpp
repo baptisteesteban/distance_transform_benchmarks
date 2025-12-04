@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
   const auto d_img   = dt::host_to_device(img);
   const auto d_mask  = dt::host_to_device(mask);
-  const auto d_dist  = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 1e10, lambda);
+  const auto d_dist  = dt::geodesic_distance_transform_chessboard(d_img, d_mask, lambda);
   const auto dist    = dt::device_to_host(d_dist);
   const auto norm    = dt::normalize<std::uint8_t>(dist);
   const auto colored = dt::inferno(norm);

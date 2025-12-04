@@ -279,7 +279,7 @@ TEST(DistanceTransform, EuclidianFastGeodis)
 
   auto       d_img  = dt::host_to_device(img);
   auto       d_mask = dt::host_to_device(mask);
-  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 0.0);
+  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 0.0);
   const auto dist   = dt::device_to_host(d_dist);
 
   ASSERT_IMAGES_EQ(dist, ref_dist);
@@ -474,7 +474,7 @@ TEST(DistanceTransform, GeodesicFastGeodis)
 
   auto       d_img  = dt::host_to_device(img);
   auto       d_mask = dt::host_to_device(mask);
-  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1e10, 1.0);
+  const auto d_dist = dt::geodesic_distance_transform(d_img, d_mask, 1.0);
   const auto dist   = dt::device_to_host(d_dist);
 
   ASSERT_IMAGES_EQ(dist, ref_dist);
@@ -497,8 +497,8 @@ TEST(DistanceTransform, EuclidianChessboard)
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
 
-  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1e10f, 0.0f);
-  const auto d_dist2 = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 1e10f, 0.0f);
+  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 0.0f);
+  const auto d_dist2 = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 0.0f);
 
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
@@ -522,8 +522,8 @@ TEST(DistanceTransform, GeodesicChessboard)
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
 
-  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1e10f, 1.0f);
-  const auto d_dist2 = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 1e10f, 1.0f);
+  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1.0f);
+  const auto d_dist2 = dt::geodesic_distance_transform_chessboard(d_img, d_mask, 1.0f);
 
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
@@ -547,8 +547,8 @@ TEST(DistanceTransform, GeodesicChessboard)
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
 
-  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1e10f, 0.0f);
-  const auto d_dist2 = dt::geodesic_distance_transform_task(d_img, d_mask, 1e10f, 0.0f);
+  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 0.0f);
+  const auto d_dist2 = dt::geodesic_distance_transform_task(d_img, d_mask, 0.0f);
 
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
@@ -572,8 +572,8 @@ TEST(DistanceTransform, GeodesicTask)
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
 
-  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1e10f, 1.0f);
-  const auto d_dist2 = dt::geodesic_distance_transform_task(d_img, d_mask, 1e10f, 1.0f);
+  const auto d_dist1 = dt::geodesic_distance_transform(d_img, d_mask, 1.0f);
+  const auto d_dist2 = dt::geodesic_distance_transform_task(d_img, d_mask, 1.0f);
 
   const auto dist1 = dt::device_to_host(d_dist1);
   const auto dist2 = dt::device_to_host(d_dist2);
