@@ -10,6 +10,110 @@ namespace dt
 {
   namespace cg = cooperative_groups;
 
+  __device__ static bool block_propagation_job(const image2d_view<std::uint8_t>& img, image2d_view<float>& D,
+                                               float l_grad, float l_eucl, DeviceTaskQueue tq)
+  {
+    __shared__ std::uint8_t s_img[TILE_SIZE][TILE_SIZE];
+    __shared__ float        s_D[TILE_SIZE][TILE_SIZE];
+
+
+    __shared__ int block_id;
+    if (threadIdx.x == 0)
+      block_id = tq.popTask();
+    __syncthreads();
+
+    if (block_id < 0)
+      return false;
+
+    const int grid_width  = tq.gridDimX;
+    const int grid_height = tq.gridDimY;
+    const int bx          = block_id % grid_width;
+    const int by          = block_id / grid_width;
+    const int x           = bx * BLOCK_SIZE;
+    const int y           = by * BLOCK_SIZE + threadIdx.x;
+
+    {
+      // tx and ty are the tile indices
+      for (int tx = 0; tx < TILE_SIZE; ++tx)
+      {
+        for (int dty = -BLOCK_SIZE; dty <= BLOCK_SIZE; dty += BLOCK_SIZE)
+        {
+          const int ty = threadIdx.x + dty + 1;
+          if (ty < 0 || ty >= TILE_SIZE)
+            continue;
+
+          const int gx = x + tx - 1;
+          const int gy = y + dty;
+
+          bool valid    = gx >= 0 && gx < img.width() && gy >= 0 && gy < img.height();
+          s_img[ty][tx] = valid ? img(gx, gy) : 0;
+          s_D[ty][tx]   = valid ? D(gx, gy) : 0;
+        }
+      }
+    }
+    __syncthreads();
+
+    int            block_changed = 0;
+    __shared__ int iter_block_changed;
+    if (threadIdx.x == 0)
+      iter_block_changed = 1;
+    __syncthreads();
+    while (iter_block_changed)
+    {
+      if (threadIdx.x == 0)
+        iter_block_changed = 0;
+      __syncthreads();
+
+      // TODO: take into account value not available in block processing
+      int t_changed = 0;
+      t_changed |= pass<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      __syncthreads();
+      t_changed |= pass<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      __syncthreads();
+      t_changed |= pass_T<true>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      __syncthreads();
+      t_changed |= pass_T<false>(s_img, s_D, img.width(), img.height(), l_eucl, l_grad);
+      __syncthreads();
+
+      if (t_changed)
+        atomicOr_block(&iter_block_changed, t_changed);
+      __syncthreads();
+
+      block_changed |= iter_block_changed;
+    }
+    __syncthreads();
+
+    // Enqueue new active blocks
+    if (threadIdx.x == 0)
+    {
+      tq.blockStatus.clear(block_id);
+      if (block_changed != 0)
+      {
+        if ((bx > 0) && (block_changed & BLOCK_CHANGED_LEFT))
+          tq.enqueueTask(bx - 1, by);
+        if ((bx < grid_width - 1) && (block_changed & BLOCK_CHANGED_RIGHT))
+          tq.enqueueTask(bx + 1, by);
+        if ((by > 0) && (block_changed & BLOCK_CHANGED_TOP))
+          tq.enqueueTask(bx, by - 1);
+        if ((by < grid_height - 1) && (block_changed & BLOCK_CHANGED_BOTTOM))
+          tq.enqueueTask(bx, by + 1);
+      }
+    }
+    __syncthreads();
+
+    {
+      const int ty = threadIdx.x + 1;
+      for (int tx = 0; tx < BLOCK_SIZE; ++tx)
+      {
+        if (x + tx < img.width() && y < img.height())
+          D(x + tx, y) = s_D[ty][tx + 1];
+      }
+    }
+    __syncthreads();
+
+    return true;
+  }
+
   __global__ static void block_propagation(image2d_view<std::uint8_t> img, image2d_view<float> D, float l_grad,
                                            float l_eucl, DeviceTaskQueue tq)
   {

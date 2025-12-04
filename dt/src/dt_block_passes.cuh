@@ -11,19 +11,23 @@ namespace dt
   // Left -> Right
   template <bool Forward>
   __device__ int pass(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
-                      float l_grad)
+                      float l_grad, int bx = -1, int by = -1)
   {
-    const int block_start = blockIdx.x * blockDim.x;
-    const int block_end   = std::min<int>((blockIdx.x + 1) * blockDim.x, width);
+    if (bx < 0)
+      bx = blockIdx.x;
+    if (by < 0)
+      by = blockIdx.y;
+    const int block_start = bx * BLOCK_SIZE;
+    const int block_end   = std::min<int>((bx + 1) * BLOCK_SIZE, width);
     const int block_width = block_end - block_start;
 
     constexpr int dx      = Forward ? -1 : 1;
     constexpr int inc     = -1 * dx;
-    const int     start_x = Forward ? 1 + (block_start == 0) : block_width - (blockIdx.x == gridDim.x - 1);
+    const int     start_x = Forward ? 1 + (block_start == 0) : block_width - (bx == gridDim.x - 1); // TODO: modify
     const int     end_x   = Forward ? 1 + block_width : 0;
 
     const int  ty     = threadIdx.x + 1;
-    const int  y      = blockIdx.y * blockDim.x + threadIdx.x;
+    const int  y      = by * BLOCK_SIZE + threadIdx.x;
     const bool active = y < height;
 
     int line_changed = 0;
@@ -59,19 +63,24 @@ namespace dt
   // Left -> Right
   template <bool Forward>
   __device__ int pass_T(const std::uint8_t img[][TILE_SIZE], float D[][TILE_SIZE], int width, int height, float l_eucl,
-                        float l_grad)
+                        float l_grad, int bx = -1, int by = -1)
   {
-    const int block_start  = blockIdx.y * blockDim.x;
-    const int block_end    = std::min<int>((blockIdx.y + 1) * blockDim.x, height);
+    if (bx < 0)
+      bx = blockIdx.x;
+    if (by < 0)
+      by = blockIdx.y;
+
+    const int block_start  = by * BLOCK_SIZE;
+    const int block_end    = std::min<int>((by + 1) * BLOCK_SIZE, height);
     const int block_height = block_end - block_start;
 
     constexpr int dy      = Forward ? -1 : 1;
     constexpr int inc     = -1 * dy;
-    const int     start_y = Forward ? 1 + (block_start == 0) : block_height - (blockIdx.y == gridDim.y - 1);
+    const int     start_y = Forward ? 1 + (block_start == 0) : block_height - (by == gridDim.y - 1);
     const int     end_y   = Forward ? 1 + block_height : 0;
 
     const int  tx     = threadIdx.x + 1;
-    const int  x      = blockIdx.x * blockDim.x + threadIdx.x;
+    const int  x      = bx * BLOCK_SIZE + threadIdx.x;
     const bool active = x < width;
 
     int line_changed = 0;
