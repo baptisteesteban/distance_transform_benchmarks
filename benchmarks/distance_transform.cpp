@@ -9,7 +9,8 @@
 #include <format>
 #include <iostream>
 
-static constexpr auto TIME_UNIT = benchmark::kMillisecond;
+static constexpr auto  TIME_UNIT = benchmark::kMillisecond;
+static constexpr float LAMBDAS[] = {0.0, 0.5, 1.0};
 
 // Image loading
 
@@ -40,7 +41,10 @@ static void build_argument(benchmark::internal::Benchmark* b)
 {
   load_benchmark_images();
   for (int i = 0; i < bench_filenames.size(); i++)
-    b->Arg(i);
+  {
+    for (int j = 0; j < 3; j++)
+      b->Args({i, j});
+  }
 }
 
 // Fixture
@@ -63,6 +67,10 @@ public:
     mask(img.width() / 2, img.height() / 2) = 0;
     m_mask = dt::image2d<std::uint8_t>(img.width(), img.height(), dt::e_memory_kind::GPU);
     dt::host_to_device(mask, m_mask);
+
+    const int lambda_id      = state.range(1);
+    m_lambda                 = LAMBDAS[lambda_id];
+    state.counters["lambda"] = m_lambda;
   }
 
   void run(benchmark::State& state)
@@ -106,16 +114,17 @@ public:
 protected:
   dt::image2d<std::uint8_t> m_img;
   dt::image2d<std::uint8_t> m_mask;
+  float                     m_lambda;
 };
 
 struct BMDistanceTransformGeos : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, 1.0); }
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, m_lambda); }
 };
 
 struct BMDistanceTransformChessboard : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, 1.0); }
+  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, m_lambda); }
 };
 
 // Main
@@ -139,7 +148,7 @@ BENCHMARK_REGISTER_F(BMDistanceTransformChessboard, BMDistanceTransformChessboar
     ->Apply(build_argument)
     ->Unit(TIME_UNIT)
     ->UseManualTime()
-    ->Name("DistanceTransformGeos");
+    ->Name("DistanceTransformChessboard");
 
 int main(int argc, char* argv[])
 {
