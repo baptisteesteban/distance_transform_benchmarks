@@ -1,4 +1,4 @@
-#define ILLUSTRATIONS_ENABLED
+// #define ILLUSTRATIONS_ENABLED
 
 #include <dt/image2d.hpp>
 
