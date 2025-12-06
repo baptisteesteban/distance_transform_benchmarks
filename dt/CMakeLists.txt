@@ -13,6 +13,11 @@ target_sources(dt-core PRIVATE
     src/inferno.cpp
     src/transfert.cpp
 
+    # IO
+    src/imread.cpp
+    src/imsave.cpp
+    src/stb_image_implementation.c
+
     # CUDA source code
     src/utils.cu
     src/task_queue.cu
@@ -27,14 +32,3 @@ target_sources(dt-core PRIVATE
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)
 target_link_libraries(dt-core PUBLIC CUDA::cudart)
-
-if (BUILD_IO)
-    add_library(dt-io)
-    add_library(dt::io ALIAS dt-io)
-    target_sources(dt-io PRIVATE
-        src/imread.cpp
-        src/imsave.cpp
-        src/stb_image_implementation.c
-    )
-    target_link_libraries(dt-io PUBLIC dt-core)
-endif(BUILD_IO)

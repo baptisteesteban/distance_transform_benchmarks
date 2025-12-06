@@ -12,7 +12,6 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "BUILD_TESTING": "ON",
                 "BUILD_BINARIES": "ON",
-                "BUILD_IO": "ON",
                 "BUILD_BENCHMARKS": "ON"
             }
         },
@@ -25,7 +24,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_BINARIES": "ON",
-                "BUILD_IO": "ON",
                 "BUILD_BENCHMARKS": "ON"
             }
         }

@@ -5,7 +5,6 @@ set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
 
 option(BUILD_TESTING "Build the tests of the package" OFF)
 option(BUILD_BINARIES "Build the binaries of the project" OFF)
-option(BUILD_IO "Build the IO module" OFF)
 option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 add_subdirectory(dt)

@@ -52,5 +52,5 @@ int main(int argc, char* argv[])
   const auto dist    = dt::device_to_host(d_dist);
   const auto norm    = dt::normalize<std::uint8_t>(dist);
   const auto colored = dt::inferno(norm);
-  dt::imsave("out.png", colored);
+  dt::imsave(argv[3], colored);
 }

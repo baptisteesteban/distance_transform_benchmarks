@@ -1,12 +1,41 @@
+#define ILLUSTRATIONS_ENABLED
+
 #include <dt/image2d.hpp>
+
+#ifdef ILLUSTRATIONS_ENABLED
+#include <dt/imsave.hpp>
+#include <dt/inferno.hpp>
+#include <dt/normalize.hpp>
+#include <dt/transfert.hpp>
+#endif
 
 #include "dt_block_passes.cuh"
 #include "utils.cuh"
 
+
 namespace dt
 {
+#ifdef ILLUSTRATIONS_ENABLED
+  __global__ static void propagation_to_image(image2d_view<std::uint16_t>& out, const std::uint16_t* propagated)
+  {
+    const int bx  = blockIdx.x;
+    const int by  = blockIdx.y;
+    const int bid = by * gridDim.x + bx;
+    const int x   = bx * BLOCK_SIZE + threadIdx.x;
+    const int y   = by * BLOCK_SIZE + threadIdx.y;
+
+    if (x < out.width() && y < out.height())
+      out(x, y) = propagated[bid];
+  }
+#endif
+
   __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float v,
-                                           float l_eucl, float l_grad, bool even, bool* active, bool* changed)
+                                           float l_eucl, float l_grad, bool even, bool* active, bool* changed
+#ifdef ILLUSTRATIONS_ENABLED
+                                           ,
+                                           std::uint16_t* propagated
+#endif
+  )
   {
     const int bx  = blockIdx.x;
     const int by  = blockIdx.y;
@@ -18,6 +47,10 @@ namespace dt
       return;
     if (!active[bid])
       return;
+#ifdef ILLUSTRATIONS_ENABLED
+    if (threadIdx.x == 0)
+      propagated[bid] += 1;
+#endif
 
     const int x = bx * BLOCK_SIZE;
     const int y = by * BLOCK_SIZE + threadIdx.x;
@@ -134,19 +167,46 @@ namespace dt
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
 
-    int   nround = 0;
     bool* active;
     cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
     cudaMemset(active, true, grid_width * grid_height * sizeof(bool));
-    while (*changed /*&& nround < 5*/)
+#ifdef ILLUSTRATIONS_ENABLED
+    std::uint16_t* propagated;
+    cudaMalloc(&propagated, grid_width * grid_height * sizeof(std::uint16_t));
+    cudaMemset(propagated, 0, grid_width * grid_height * sizeof(std::uint16_t));
+#endif
+    while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed);
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed);
-      nround += 1;
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed
+#ifdef ILLUSTRATIONS_ENABLED
+                                                 ,
+                                                 propagated
+#endif
+      );
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed
+#ifdef ILLUSTRATIONS_ENABLED
+                                                 ,
+                                                 propagated
+#endif
+      );
       cudaDeviceSynchronize();
     }
     cudaFree(changed);
+    cudaFree(active);
+#ifdef ILLUSTRATIONS_ENABLED
+    {
+      dim3                   block_dim_k(BLOCK_SIZE, BLOCK_SIZE);
+      image2d<std::uint16_t> d_propagated_img(img.width(), img.height(), e_memory_kind::GPU);
+      propagation_to_image<<<grid_dim, block_dim_k>>>(d_propagated_img, propagated);
+      cudaDeviceSynchronize();
+      const auto propagated_img = dt::device_to_host(d_propagated_img);
+      const auto normalized     = dt::normalize<std::uint8_t>(propagated_img);
+      const auto colored        = dt::inferno(normalized);
+      dt::imsave("propagated.png", colored);
+    }
+    cudaFree(propagated);
+#endif
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
   }
