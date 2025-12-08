@@ -12,6 +12,7 @@ target_sources(dt-core PRIVATE
     src/imprint.cpp
     src/inferno.cpp
     src/transfert.cpp
+    src/invert_mask.cpp
 
     # IO
     src/imread.cpp
