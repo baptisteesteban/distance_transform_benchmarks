@@ -1,4 +1,5 @@
 #include <dt/image2d.hpp>
+#include <dt/priority.hpp>
 
 #include <cooperative_groups.h>
 
@@ -121,7 +122,7 @@ namespace dt
     std::uint64_t queue_flags = 1;
 
     const int NUM_WORKERS      = gridDim.x;
-    const int LEVEL_0_WORKSIZE = PriorityTools::distanceCDF(0, tq.gridDimX, tq.gridDimY);
+    const int LEVEL_0_WORKSIZE = lldt_priority().distanceCDF(0, tq.gridDimX, tq.gridDimY);
     const int WORKER_JOB_SIZE  = std::max(10, LEVEL_0_WORKSIZE / NUM_WORKERS);
 
     while (queue_flags > 0)

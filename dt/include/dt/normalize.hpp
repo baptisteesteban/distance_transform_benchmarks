@@ -4,10 +4,14 @@
 
 #include <concepts>
 #include <limits>
+#include <optional>
 #include <type_traits>
 
 namespace dt
 {
+  template <typename T>
+  std::pair<T, T> minmax(const image2d_view<T>& in) noexcept;
+
   template <typename T, typename O>
   void normalize(const image2d_view<T>& in, image2d<O>& out) noexcept;
 
@@ -18,8 +22,9 @@ namespace dt
    * Implementation
    */
 
-  template <typename T, typename O>
-  void normalize(const image2d_view<T>& in, image2d<O>& out) noexcept
+
+  template <typename T>
+  std::pair<T, T> minmax(const image2d_view<T>& in) noexcept
   {
     using V = std::remove_cvref_t<T>;
 
@@ -34,6 +39,13 @@ namespace dt
         max = std::max(max, in(x, y));
       }
     }
+    return {min, max};
+  }
+
+  template <typename T, typename O>
+  void normalize(const image2d_view<T>& in, image2d<O>& out) noexcept
+  {
+    const auto [min, max] = minmax(in);
 
     // Second pass: normalize and store in output image
     const double denom = static_cast<double>(max - min);
