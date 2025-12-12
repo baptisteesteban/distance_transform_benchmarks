@@ -1,7 +1,3 @@
-add_executable(level_lines_distance_transform_propagation level_lines_distance_transform_propagation.cpp)
-target_link_libraries(level_lines_distance_transform_propagation PRIVATE dt::core)
-add_executable(lldt_gpu lldt_gpu.cpp)
-target_link_libraries(lldt_gpu PRIVATE dt::core)
 add_executable(distance_transform distance_transform.cpp)
 target_link_libraries(distance_transform PRIVATE dt::core)
 add_executable(priority_block priority_block.cu)

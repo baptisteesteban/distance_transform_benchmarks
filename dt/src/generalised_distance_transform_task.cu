@@ -138,8 +138,9 @@ namespace dt
     }
   }
 
-  void geodesic_distance_transform_task(const image2d_view<std::uint8_t>& img, const image2d_view<std::uint8_t>& mask,
-                                        image2d_view<float>& D, float lambda, float v)
+  void generalised_distance_transform_task(const image2d_view<std::uint8_t>& img,
+                                           const image2d_view<std::uint8_t>& mask, image2d_view<float>& D, float lambda,
+                                           float v)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
@@ -156,7 +157,7 @@ namespace dt
       dim3          gridDim((D.width() + INIT_BLOCK_SIZE - 1) / INIT_BLOCK_SIZE,
                             (D.height() + INIT_BLOCK_SIZE - 1) / INIT_BLOCK_SIZE);
       dim3          blockDim(INIT_BLOCK_SIZE, INIT_BLOCK_SIZE);
-      initialize_geodesic_distance_map<<<gridDim, blockDim>>>(mask, D, v);
+      initialize_generalised_distance_map<<<gridDim, blockDim>>>(mask, D, v);
       cudaDeviceSynchronize();
     }
 
@@ -183,13 +184,13 @@ namespace dt
       throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
   }
 
-  image2d<float> geodesic_distance_transform_task(const image2d_view<std::uint8_t>& img,
-                                                  const image2d_view<std::uint8_t>& mask, float lambda, float v)
+  image2d<float> generalised_distance_transform_task(const image2d_view<std::uint8_t>& img,
+                                                     const image2d_view<std::uint8_t>& mask, float lambda, float v)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    geodesic_distance_transform_task(img, mask, D, lambda, v);
+    generalised_distance_transform_task(img, mask, D, lambda, v);
     return D;
   }
 } // namespace dt

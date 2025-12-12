@@ -1,4 +1,4 @@
-#include <dt/geodesic_distance_transform.hpp>
+#include <dt/generalised_distance_transform.hpp>
 #include <dt/imread.hpp>
 #include <dt/transfert.hpp>
 
@@ -119,12 +119,15 @@ protected:
 
 struct BMDistanceTransformGeos : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform(m_img, m_mask, m_lambda); }
+  void exec(benchmark::State&) const override { dt::generalised_distance_transform(m_img, m_mask, m_lambda); }
 };
 
 struct BMDistanceTransformChessboard : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override { dt::geodesic_distance_transform_chessboard(m_img, m_mask, m_lambda); }
+  void exec(benchmark::State&) const override
+  {
+    dt::generalised_distance_transform_chessboard(m_img, m_mask, m_lambda);
+  }
 };
 
 // Main

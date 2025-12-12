@@ -6,7 +6,6 @@ add_library(dt-core)
 add_library(dt::core ALIAS dt-core)
 target_sources(dt-core PRIVATE
     # CPP source code
-    src/circular_bucket_queue.cpp
     src/image2d_data.cpp
     src/image2d_view.cpp
     src/imprint.cpp
@@ -22,13 +21,9 @@ target_sources(dt-core PRIVATE
     # CUDA source code
     src/utils.cu
     src/task_queue.cu
-    src/immersion.cu
-    src/level_lines_distance_transform_fg.cu
-    src/level_lines_distance_transform_chessboard.cu
-    src/level_lines_distance_transform_task_priority.cu
-    src/geodesic_distance_transform.cu
-    src/geodesic_distance_transform_chessboard.cu
-    src/geodesic_distance_transform_task.cu
+    src/generalised_distance_transform.cu
+    src/generalised_distance_transform_chessboard.cu
+    src/generalised_distance_transform_task.cu
 )
 target_include_directories(dt-core PUBLIC include)
 target_compile_features(dt-core PUBLIC cxx_std_23)

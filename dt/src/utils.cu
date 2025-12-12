@@ -44,8 +44,8 @@ namespace dt
       q.enqueueTask(width - 1, 2 * k + b);
   }
 
-  __global__ void initialize_geodesic_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
-                                                   float v)
+  __global__ void initialize_generalised_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
+                                                      float v)
   {
     const int x = blockDim.x * blockIdx.x + threadIdx.x;
     const int y = blockDim.y * blockIdx.y + threadIdx.y;
