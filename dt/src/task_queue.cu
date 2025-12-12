@@ -21,29 +21,17 @@ namespace dt
 
   namespace
   {
-    void priorityCDF(const std::vector<int>& h_priorities, int* output, int K, int queue_size)
+    void setupEqualOffsets(int* output, int K, int queue_size)
     {
-      const int size = h_priorities.size();
-      if (size == 0)
-        return;
-
-      // Count how many blocks have each priority
-      std::vector<int> counts(K, 0);
-      for (int p : h_priorities)
+      // Allocate equal space for each priority level
+      // This ensures any priority can hold up to queue_size/K blocks
+      int space_per_priority = queue_size / K;
+      for (int i = 0; i < K; i++)
       {
-        if (p >= 0 && p < K)
-          counts[p]++;
+        output[i] = i * space_per_priority;
       }
-
-      // Compute cumulative offsets
-      output[0] = 0;
-      for (int i = 1; i < K; i++)
-      {
-        output[i] = output[i - 1] + counts[i - 1];
-        // Ensure we don't exceed the queue size
-        if (output[i] > queue_size)
-          output[i] = queue_size;
-      }
+      // Set the sentinel value for the last offset
+      output[K] = queue_size;
     }
   } // namespace
 
@@ -56,8 +44,10 @@ namespace dt
 
     // Allocate memory for the task queues
     int size = gridDimX * gridDimY;
-    // Allocate storage for two queues, each can hold all blocks
-    cudaMalloc(&gQueueStorage, 2 * size * sizeof(int));
+    // Allocate storage for two queues, each with enough space
+    // We need space for all blocks across all priority levels
+    int total_storage = 2 * size * HPQueue::MAX_PRIORITY;
+    cudaMalloc(&gQueueStorage, total_storage * sizeof(int));
     cudaMalloc(&gHPQueue[0], sizeof(HPQueue));
     cudaMalloc(&gHPQueue[1], sizeof(HPQueue));
     cudaMalloc(&gBlockPriority, size);
@@ -74,8 +64,8 @@ namespace dt
     cudaMemcpy(gBlockPriority, priorities.get(), size, cudaMemcpyHostToDevice);
 
     std::vector<int> offsets(HPQueue::MAX_PRIORITY + 1);
-    int              queue_size = size; // Each queue can hold all blocks
-    priorityCDF(h_priorities, offsets.data(), HPQueue::MAX_PRIORITY, queue_size);
+    int              queue_size = size * HPQueue::MAX_PRIORITY; // Each queue gets half the total
+    setupEqualOffsets(offsets.data(), HPQueue::MAX_PRIORITY, queue_size);
 
     int* devgQueueOffsetPtr;
     cudaMemcpyToSymbol(gQueueOffsets, offsets.data(), HPQueue::MAX_PRIORITY * sizeof(int));
