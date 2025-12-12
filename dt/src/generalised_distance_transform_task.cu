@@ -122,7 +122,7 @@ namespace dt
     std::uint64_t queue_flags = 1;
 
     const int NUM_WORKERS      = gridDim.x;
-    const int LEVEL_0_WORKSIZE = lldt_priority().distanceCDF(0, tq.gridDimX, tq.gridDimY);
+    const int LEVEL_0_WORKSIZE = manhattan_distance_object(0, 0).distanceCDF(0, tq.gridDimX, tq.gridDimY);
     const int WORKER_JOB_SIZE  = std::max(10, LEVEL_0_WORKSIZE / NUM_WORKERS);
 
     while (queue_flags > 0)
@@ -163,7 +163,7 @@ namespace dt
 
     const int grid_width  = (img.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    TaskQueue tq(grid_width, grid_height);
+    TaskQueue tq(grid_width, grid_height, mask, BLOCK_SIZE);
     {
       auto block_queue = tq.getDeviceQueue();
       std::swap(block_queue.currentQueue, block_queue.nextQueue);

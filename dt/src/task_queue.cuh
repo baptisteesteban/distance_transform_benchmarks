@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dt/image2d.hpp>
+
 #include <cuda/atomic>
 #include <cuda_runtime.h>
 
@@ -137,7 +139,7 @@ namespace dt
   class TaskQueue
   {
   public:
-    TaskQueue(int gridDimX, int gridDimY);
+    TaskQueue(int gridDimX, int gridDimY, const dt::image2d_view<std::uint8_t>& mask, int block_size);
     ~TaskQueue();
 
 

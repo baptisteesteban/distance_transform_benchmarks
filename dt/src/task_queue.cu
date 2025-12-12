@@ -1,7 +1,10 @@
-#include <dt/priority.hpp>
+#include <dt/block_priority.hpp>
+#include <dt/image2d.hpp>
 
-#include <iostream>
 #include <vector>
+
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
 
 #include "task_queue.cuh"
 
@@ -18,23 +21,28 @@ namespace dt
 
   namespace
   {
-    void priorityCDF(int width, int height, int* output, int K)
+    void priorityCDF(const std::vector<int>& h_priorities, int* output, int K)
     {
-      int dmax  = std::max(width + 1, height + 1) / 2;
-      int total = width * height + 1;
-      output[0] = 0;
-      for (int d = 0; d < dmax; ++d)
-      {
-        // Number of blocks at distance ≤ d-1 (ie < d)
-        int count    = lldt_priority().distanceCDF(d, width, height);
-        int priority = count * K / total;
+      const int size = h_priorities.size();
+      if (size == 0)
+        return;
 
-        // We want the number of blocks at priority < p
-        //                             ie  distance < min distance that gives priority p
-        output[priority + 1] = count;
+      output[0] = 0;
+      std::vector<int> counts(K, 0);
+
+      // Count how many blocks have priority < p for each p
+      for (int p : h_priorities)
+      {
+        if (p >= 0 && p < K)
+        {
+          for (int i = p + 1; i <= K; ++i)
+            counts[i]++;
+        }
       }
+
       for (int i = 1; i < K; i++)
       {
+        output[i] = counts[i];
         if (output[i] == 0)
         {
           output[i] = output[i - 1];
@@ -48,8 +56,7 @@ namespace dt
     }
   } // namespace
 
-
-  TaskQueue::TaskQueue(int gridDimX, int gridDimY)
+  TaskQueue::TaskQueue(int gridDimX, int gridDimY, const dt::image2d_view<std::uint8_t>& mask, int block_size)
     : gActiveBlocks(gridDimX * gridDimY)
   {
     m_gridDimX = gridDimX;
@@ -63,17 +70,19 @@ namespace dt
     cudaMalloc(&gHPQueue[1], sizeof(HPQueue));
     cudaMalloc(&gBlockPriority, size);
 
-    auto priorities = std::make_unique_for_overwrite<std::uint8_t[]>(size);
-    for (int by = 0; by < gridDimY; by++)
-    {
-      for (int bx = 0; bx < gridDimX; bx++)
-        priorities[by * gridDimX + bx] = lldt_priority().priorityof(bx, by, gridDimX, gridDimY, HPQueue::MAX_PRIORITY);
-    }
+    // Compute block priorities from mask using the new library
+    auto d_priorities = dt::compute_block_priorities(mask, block_size, HPQueue::MAX_PRIORITY);
+
+    // Copy priorities to gBlockPriority
+    auto             priorities = std::make_unique_for_overwrite<std::uint8_t[]>(size);
+    std::vector<int> h_priorities(size);
+    thrust::copy(d_priorities.begin(), d_priorities.end(), h_priorities.begin());
+    for (int i = 0; i < size; ++i)
+      priorities[i] = static_cast<std::uint8_t>(h_priorities[i]);
     cudaMemcpy(gBlockPriority, priorities.get(), size, cudaMemcpyHostToDevice);
 
     std::vector<int> offsets(HPQueue::MAX_PRIORITY + 1);
-    priorityCDF(gridDimX, gridDimY, offsets.data(), HPQueue::MAX_PRIORITY);
-
+    priorityCDF(h_priorities, offsets.data(), HPQueue::MAX_PRIORITY);
 
     int* devgQueueOffsetPtr;
     cudaMemcpyToSymbol(gQueueOffsets, offsets.data(), HPQueue::MAX_PRIORITY * sizeof(int));

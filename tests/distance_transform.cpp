@@ -270,11 +270,11 @@ TEST(DistanceTransform, EuclidianFastGeodis)
   dt::image2d_view          img(img_data, WIDTH, HEIGHT, WIDTH);
   dt::image2d_view          ref_dist(ref_data, WIDTH, HEIGHT, WIDTH * sizeof(float));
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
+  dt::fill(mask, std::uint8_t(0));
   for (int y = 20; y < 30; y++)
   {
     for (int x = 20; x < 43; x++)
-      mask(x, y) = 0;
+      mask(x, y) = 1;
   }
 
   auto       d_img  = dt::host_to_device(img);
@@ -469,8 +469,8 @@ TEST(DistanceTransform, GeodesicFastGeodis)
   dt::image2d_view          img(img_data, WIDTH, HEIGHT, WIDTH);
   dt::image2d_view          ref_dist(ref_data, WIDTH, HEIGHT, WIDTH * sizeof(float));
   dt::image2d<std::uint8_t> mask(WIDTH, HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
-  mask(img.width() / 2, img.height() / 2) = 0;
+  dt::fill(mask, std::uint8_t(0));
+  mask(img.width() / 2, img.height() / 2) = 1;
 
   auto       d_img  = dt::host_to_device(img);
   auto       d_mask = dt::host_to_device(mask);
@@ -491,8 +491,8 @@ TEST(DistanceTransform, EuclidianChessboard)
 {
   const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
   dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
-  mask(img.width() / 2, img.height() / 2) = 0;
+  dt::fill(mask, std::uint8_t(0));
+  mask(img.width() / 2, img.height() / 2) = 1;
 
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
@@ -516,8 +516,8 @@ TEST(DistanceTransform, GeodesicChessboard)
 {
   const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
   dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
-  mask(img.width() / 2, img.height() / 2) = 0;
+  dt::fill(mask, std::uint8_t(0));
+  mask(img.width() / 2, img.height() / 2) = 1;
 
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
@@ -537,12 +537,12 @@ TEST(DistanceTransform, GeodesicChessboard)
   ASSERT_IMAGES_EQ(dist1, dist2);
 }
 
-/*TEST(DistanceTransform, EuclidianTask)
+TEST(DistanceTransform, EuclidianTask)
 {
   const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
   dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
-  mask(img.width() / 2, img.height() / 2) = 0;
+  dt::fill(mask, std::uint8_t(0));
+  mask(img.width() / 2, img.height() / 2) = 1;
 
   auto d_img  = dt::host_to_device(img);
   auto d_mask = dt::host_to_device(mask);
@@ -561,28 +561,3 @@ TEST(DistanceTransform, GeodesicChessboard)
 
   ASSERT_IMAGES_EQ(dist1, dist2);
 }
-
-TEST(DistanceTransform, GeodesicTask)
-{
-  const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(1));
-  mask(img.width() / 2, img.height() / 2) = 0;
-
-  auto d_img  = dt::host_to_device(img);
-  auto d_mask = dt::host_to_device(mask);
-
-  const auto d_dist1 = dt::generalised_distance_transform(d_img, d_mask, 1.0f);
-  const auto d_dist2 = dt::generalised_distance_transform_task(d_img, d_mask, 1.0f);
-
-  const auto dist1 = dt::device_to_host(d_dist1);
-  const auto dist2 = dt::device_to_host(d_dist2);
-
-  {
-    auto norm    = dt::normalize<std::uint8_t>(dist2);
-    auto colored = dt::inferno(norm);
-    dt::imsave("debug.png", colored);
-  }
-
-  ASSERT_IMAGES_EQ(dist1, dist2);
-}*/

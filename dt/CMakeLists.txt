@@ -19,6 +19,7 @@ target_sources(dt-core PRIVATE
     src/stb_image_implementation.c
 
     # CUDA source code
+    src/block_priority.cu
     src/utils.cu
     src/task_queue.cu
     src/generalised_distance_transform.cu

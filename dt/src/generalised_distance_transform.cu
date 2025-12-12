@@ -122,8 +122,7 @@ namespace dt
     const int n_blocks_h = (img.height() + N_THREADS - 1) / N_THREADS;
     bool*     changed;
     cudaMallocManaged(&changed, sizeof(bool));
-    *changed   = true;
-    int nround = 0;
+    *changed = true;
     while (*changed)
     {
       *changed = false;
@@ -132,12 +131,10 @@ namespace dt
       pass_T<true><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
       pass_T<false><<<n_blocks_w, N_THREADS>>>(img, D, l_grad, l_eucl, changed);
       cudaDeviceSynchronize();
-      nround++;
     }
     cudaFree(changed);
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
-    std::cout << "NROUNDS: " << nround << "\n";
   }
 
   image2d<float> generalised_distance_transform(const image2d_view<std::uint8_t>& img,

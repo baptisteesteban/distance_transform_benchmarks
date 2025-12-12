@@ -4,32 +4,6 @@
 
 namespace dt
 {
-  struct lldt_priority
-  {
-    constexpr int distanceof(int x, int y, int width, int height)
-    {
-      int bbox[] = {x, y, width - x - 1, height - y - 1};
-      return *std::min_element(bbox, bbox + 4);
-    }
-
-    constexpr int distanceCDF(int d, int width, int height)
-    {
-      int A0 = width * height;
-      int w1 = std::max(width - 2 * (d + 1), 0);
-      int h1 = std::max(height - 2 * (d + 1), 0);
-      int A1 = w1 * h1;
-      return A0 - A1;
-    }
-
-    constexpr int priorityof(int x, int y, int width, int height, int K)
-    {
-      int d     = distanceof(x, y, width, height);
-      int count = distanceCDF(d, width, height);
-      int total = width * height + 1;
-      return count * K / total;
-    }
-  };
-
   class manhattan_distance_object
   {
   public:

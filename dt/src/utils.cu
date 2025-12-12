@@ -51,6 +51,6 @@ namespace dt
     const int y = blockDim.y * blockIdx.y + threadIdx.y;
 
     if (x < D.width() && y < D.height())
-      D(x, y) = v * (mask(x, y) > 0);
+      D(x, y) = v * (mask(x, y) == 0);
   }
 } // namespace dt
