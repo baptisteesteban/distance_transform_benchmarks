@@ -20,9 +20,6 @@ namespace dt
     BLOCK_CHANGED_ANY    = 16
   };
 
-  __global__ void init(const image2d_view<std::uint8_t>& m, image2d_view<std::uint32_t>& D,
-                       image2d_view<std::uint8_t>& F);
-
   __global__ void initialize_task_queue(DeviceTaskQueue q);
 
   __global__ void initialize_generalised_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,

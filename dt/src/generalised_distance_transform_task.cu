@@ -12,7 +12,7 @@ namespace dt
   namespace cg = cooperative_groups;
 
   __device__ static bool block_propagation_job(const image2d_view<std::uint8_t>& img, image2d_view<float>& D,
-                                               float l_grad, float l_eucl, DeviceTaskQueue tq)
+                                               float l_grad, float l_eucl, float v, DeviceTaskQueue tq)
   {
     __shared__ std::uint8_t s_img[TILE_SIZE][TILE_SIZE];
     __shared__ float        s_D[TILE_SIZE][TILE_SIZE];
@@ -48,7 +48,7 @@ namespace dt
 
           bool valid    = gx >= 0 && gx < img.width() && gy >= 0 && gy < img.height();
           s_img[ty][tx] = valid ? img(gx, gy) : 0;
-          s_D[ty][tx]   = valid ? D(gx, gy) : 0;
+          s_D[ty][tx]   = valid ? D(gx, gy) : v;
         }
       }
     }
@@ -116,7 +116,7 @@ namespace dt
   }
 
   __global__ static void block_propagation(image2d_view<std::uint8_t> img, image2d_view<float> D, float l_grad,
-                                           float l_eucl, DeviceTaskQueue tq)
+                                           float l_eucl, float v, DeviceTaskQueue tq)
   {
     auto          grid        = cg::this_grid();
     std::uint64_t queue_flags = 1;
@@ -129,7 +129,7 @@ namespace dt
     {
       for (int k = 0; k < WORKER_JOB_SIZE; k++)
       {
-        if (!block_propagation_job(img, D, l_grad, l_eucl, tq))
+        if (!block_propagation_job(img, D, l_grad, l_eucl, v, tq))
           break;
         __syncthreads();
       }
@@ -176,7 +176,7 @@ namespace dt
 
     auto                       block_queue = tq.getDeviceQueue();
     image2d_view<std::uint8_t> nc_img(img);
-    void*                      kernelArgs[] = {&nc_img, &D, &l_grad, &l_eucl, &block_queue};
+    void*                      kernelArgs[] = {&nc_img, &D, &l_grad, &l_eucl, &v, &block_queue};
     dim3                       dim_grid(device_prop.multiProcessorCount * num_blocks_per_sm);
     cudaLaunchCooperativeKernel((void*)block_propagation, dim_grid, BLOCK_SIZE, kernelArgs);
 

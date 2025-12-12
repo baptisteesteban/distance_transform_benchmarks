@@ -40,7 +40,6 @@ int main(int argc, char* argv[])
     dt::fill(mask, std::uint8_t(1));
     mask(img.width() / 2, img.height() / 2) = 1;
   }
-  mask               = invert_mask(mask);
   const float lambda = std::atof(argv[2]);
   if (lambda < 0 || lambda > 1)
   {
