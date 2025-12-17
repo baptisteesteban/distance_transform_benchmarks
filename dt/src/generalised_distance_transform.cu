@@ -24,9 +24,9 @@ namespace dt
     constexpr int dx      = -1 * inc;
 
     // Current line
-    const int y     = blockDim.x * blockIdx.x + threadIdx.x;
-    const int inf_y = blockDim.x * blockIdx.x;
-    const int sup_y = std::min<int>((blockIdx.x + 1) * blockDim.x, img.height());
+    const int y = blockDim.x * blockIdx.x + threadIdx.x;
+    // const int inf_y = blockDim.x * blockIdx.x;
+    // const int sup_y = std::min<int>((blockIdx.x + 1) * blockDim.x, img.height());
 
     if (y >= img.height())
       return;
@@ -38,7 +38,7 @@ namespace dt
       for (int dy = -1; dy < 2; dy++)
       {
         const int ny = y + dy;
-        if (ny < inf_y || ny >= sup_y)
+        if (ny < 0 || ny >= img.height())
           continue;
 
         const float l_dist   = minus_abs(img(x, y), img(x + dx, ny));
@@ -67,9 +67,9 @@ namespace dt
     constexpr int dy      = -1 * inc;
 
     // Current column
-    const int x     = blockDim.x * blockIdx.x + threadIdx.x;
-    const int inf_x = blockDim.x * blockIdx.x;
-    const int sup_x = std::min<int>((blockIdx.x + 1) * blockDim.x, img.width());
+    const int x = blockDim.x * blockIdx.x + threadIdx.x;
+    // const int inf_x = blockDim.x * blockIdx.x;
+    // const int sup_x = std::min<int>((blockIdx.x + 1) * blockDim.x, img.width());
 
     if (x >= img.width())
       return;
@@ -80,7 +80,7 @@ namespace dt
       for (int dx = -1; dx < 2; dx++)
       {
         const int nx = x + dx;
-        if (nx < inf_x || nx >= sup_x)
+        if (nx < 0 || nx >= img.width())
           continue;
 
         const float l_dist   = minus_abs(img(x, y), img(nx, y + dy));

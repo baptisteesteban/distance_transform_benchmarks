@@ -56,6 +56,10 @@ namespace dt
           line_changed |= (ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
           line_changed |= (tx == 1) * BLOCK_CHANGED_LEFT;
           line_changed |= (tx == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
+          line_changed |= (tx == 1 && ty == 1) * BLOCK_CHANGED_TOP_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2 && ty == 1) * BLOCK_CHANGED_TOP_RIGHT;
+          line_changed |= (tx == 1 && ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2 && ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM_RIGHT;
         }
       }
       __syncthreads();
@@ -111,6 +115,10 @@ namespace dt
           line_changed |= (ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM;
           line_changed |= (tx == 1) * BLOCK_CHANGED_LEFT;
           line_changed |= (tx == TILE_SIZE - 2) * BLOCK_CHANGED_RIGHT;
+          line_changed |= (tx == 1 && ty == 1) * BLOCK_CHANGED_TOP_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2 && ty == 1) * BLOCK_CHANGED_TOP_RIGHT;
+          line_changed |= (tx == 1 && ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM_LEFT;
+          line_changed |= (tx == TILE_SIZE - 2 && ty == TILE_SIZE - 2) * BLOCK_CHANGED_BOTTOM_RIGHT;
         }
       }
       __syncthreads();

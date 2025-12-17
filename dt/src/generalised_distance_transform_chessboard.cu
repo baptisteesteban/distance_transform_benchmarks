@@ -11,6 +11,9 @@
 
 #include "dt_block_passes.cuh"
 #include "utils.cuh"
+#include <thrust/device_ptr.h>
+#include <thrust/functional.h>
+#include <thrust/transform.h>
 
 
 namespace dt
@@ -30,7 +33,8 @@ namespace dt
 #endif
 
   __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float v,
-                                           float l_eucl, float l_grad, bool even, bool* active, bool* changed
+                                           float l_eucl, float l_grad, bool even, bool* active, bool* active_candidate,
+                                           bool* changed
 #ifdef ILLUSTRATIONS_ENABLED
                                            ,
                                            std::uint16_t* propagated
@@ -114,13 +118,21 @@ namespace dt
       {
         *changed = true;
         if (by > 0 && block_changed & BLOCK_CHANGED_TOP)
-          active[(by - 1) * gridDim.x + bx] = true;
+          active_candidate[(by - 1) * gridDim.x + bx] = true;
         if (by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM)
-          active[(by + 1) * gridDim.x + bx] = true;
+          active_candidate[(by + 1) * gridDim.x + bx] = true;
         if (bx > 0 && block_changed & BLOCK_CHANGED_LEFT)
-          active[by * gridDim.x + bx - 1] = true;
+          active_candidate[by * gridDim.x + bx - 1] = true;
         if (bx < gridDim.x - 1 && block_changed & BLOCK_CHANGED_RIGHT)
-          active[by * gridDim.x + bx + 1] = true;
+          active_candidate[by * gridDim.x + bx + 1] = true;
+        if (bx > 0 && by > 0 && block_changed & BLOCK_CHANGED_TOP_LEFT)
+          active_candidate[(by - 1) * gridDim.x + bx - 1] = true;
+        if (bx < gridDim.x - 1 && by > 0 && block_changed & BLOCK_CHANGED_TOP_RIGHT)
+          active_candidate[(by - 1) * gridDim.x + bx + 1] = true;
+        if (bx > 0 && by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM_LEFT)
+          active_candidate[(by + 1) * gridDim.x + bx - 1] = true;
+        if (bx < gridDim.x - 1 && by < gridDim.y - 1 && block_changed & BLOCK_CHANGED_BOTTOM_RIGHT)
+          active_candidate[(by + 1) * gridDim.x + bx + 1] = true;
       }
     }
     __syncthreads();
@@ -167,29 +179,33 @@ namespace dt
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
 
-    bool* active;
-    cudaMalloc(&active, grid_width * grid_height * sizeof(bool));
-    cudaMemset(active, true, grid_width * grid_height * sizeof(bool));
+    const auto size = grid_width * grid_height;
+    bool*      active;
+    bool*      active_candidate;
+    cudaMalloc(&active, size * sizeof(bool));
+    cudaMemset(active, true, size * sizeof(bool));
+    cudaMalloc(&active_candidate, size * sizeof(bool));
+    cudaMemset(active_candidate, false, size * sizeof(bool));
+    auto d_active           = thrust::device_pointer_cast(active);
+    auto d_active_candidate = thrust::device_pointer_cast(active_candidate);
 #ifdef ILLUSTRATIONS_ENABLED
     std::uint16_t* propagated;
     cudaMalloc(&propagated, grid_width * grid_height * sizeof(std::uint16_t));
     cudaMemset(propagated, 0, grid_width * grid_height * sizeof(std::uint16_t));
 #endif
+    bool even = true;
     while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, true, active, changed
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, even, active, active_candidate, changed
 #ifdef ILLUSTRATIONS_ENABLED
                                                  ,
                                                  propagated
 #endif
       );
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, false, active, changed
-#ifdef ILLUSTRATIONS_ENABLED
-                                                 ,
-                                                 propagated
-#endif
-      );
+      thrust::transform(d_active, d_active + size, d_active_candidate, d_active, thrust::logical_or<bool>());
+      thrust::fill(d_active_candidate, d_active_candidate + size, false);
+      even = !even;
       cudaDeviceSynchronize();
     }
     cudaFree(changed);

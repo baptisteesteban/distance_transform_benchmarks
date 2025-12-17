@@ -13,11 +13,15 @@ namespace dt
 
   enum e_block_changed_mask
   {
-    BLOCK_CHANGED_LEFT   = 1,
-    BLOCK_CHANGED_RIGHT  = 2,
-    BLOCK_CHANGED_TOP    = 4,
-    BLOCK_CHANGED_BOTTOM = 8,
-    BLOCK_CHANGED_ANY    = 16
+    BLOCK_CHANGED_LEFT         = 1,
+    BLOCK_CHANGED_RIGHT        = 2,
+    BLOCK_CHANGED_TOP          = 4,
+    BLOCK_CHANGED_BOTTOM       = 8,
+    BLOCK_CHANGED_TOP_LEFT     = 16,
+    BLOCK_CHANGED_TOP_RIGHT    = 32,
+    BLOCK_CHANGED_BOTTOM_LEFT  = 64,
+    BLOCK_CHANGED_BOTTOM_RIGHT = 128,
+    BLOCK_CHANGED_ANY          = 256
   };
 
   __global__ void initialize_task_queue(DeviceTaskQueue q);
