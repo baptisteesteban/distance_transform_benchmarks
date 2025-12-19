@@ -42,26 +42,28 @@ namespace dt
     m_gridDimY = gridDimY;
     m_round    = 0;
 
-    // Allocate memory for the task queues
-    int size = gridDimX * gridDimY;
-    // Allocate storage for two queues, each with enough space
-    // We need space for all blocks across all priority levels
+    int size          = gridDimX * gridDimY;
     int total_storage = 2 * size * HPQueue::MAX_PRIORITY;
     cudaMalloc(&gQueueStorage, total_storage * sizeof(int));
     cudaMalloc(&gHPQueue[0], sizeof(HPQueue));
     cudaMalloc(&gHPQueue[1], sizeof(HPQueue));
     cudaMalloc(&gBlockPriority, size);
 
-    // Compute block priorities from mask using the new library
     auto d_priorities = dt::compute_block_priorities(mask, block_size, HPQueue::MAX_PRIORITY);
 
-    // Copy priorities to gBlockPriority
     auto             priorities = std::make_unique_for_overwrite<std::uint8_t[]>(size);
     std::vector<int> h_priorities(size);
     thrust::copy(d_priorities.begin(), d_priorities.end(), h_priorities.begin());
     for (int i = 0; i < size; ++i)
       priorities[i] = static_cast<std::uint8_t>(h_priorities[i]);
     cudaMemcpy(gBlockPriority, priorities.get(), size, cudaMemcpyHostToDevice);
+
+    // Compute number of blocks with priority 0 and store for device-side kernels
+    int level0_count = 0;
+    for (int i = 0; i < size; ++i)
+      if (h_priorities[i] == 0)
+        ++level0_count;
+    m_level0_worksize = level0_count;
 
     std::vector<int> offsets(HPQueue::MAX_PRIORITY + 1);
     int              queue_size = size * HPQueue::MAX_PRIORITY; // Each queue gets half the total

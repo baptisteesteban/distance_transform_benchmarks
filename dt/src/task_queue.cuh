@@ -97,6 +97,7 @@ namespace dt
     HPQueue*      currentQueue;
     HPQueue*      nextQueue;
     std::uint8_t* blockPriorities;
+    int           level0WorkSize;
 
 
     // Schedule the block (x,y) for execution in the next round
@@ -150,14 +151,16 @@ namespace dt
 
     DeviceTaskQueue getDeviceQueue()
     {
-      return {m_gridDimX, m_gridDimY, gActiveBlocks, gHPQueue[m_round], gHPQueue[!m_round], gBlockPriority};
+      return {m_gridDimX,         m_gridDimY,     gActiveBlocks,    gHPQueue[m_round],
+              gHPQueue[!m_round], gBlockPriority, m_level0_worksize};
     }
 
   private:
-    bool                m_round;    // Indicates if the current round is even or odd
-    int                 m_gridDimX; // Number of blocks in the grid in the x direction
-    int                 m_gridDimY; // Number of blocks in the grid in the y direction
-    cudaTextureObject_t m_offsets;  // Array of offsets for the HPQueue (of type int32)
+    bool                m_round;           // Indicates if the current round is even or odd
+    int                 m_gridDimX;        // Number of blocks in the grid in the x direction
+    int                 m_gridDimY;        // Number of blocks in the grid in the y direction
+    int                 m_level0_worksize; // Number of blocks with priority 0
+    cudaTextureObject_t m_offsets;         // Array of offsets for the HPQueue (of type int32)
 
 
     // Data allocated on the device
