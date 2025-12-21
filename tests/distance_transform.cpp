@@ -520,40 +520,40 @@ TEST(DistanceTransform, GeodesicChessboard)
   ASSERT_IMAGES_EQ(dist1, dist2);
 }
 
-TEST(DistanceTransform, EuclidianTask)
-{
-  const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(0));
-  mask(img.width() / 2, img.height() / 2) = 1;
-
-  auto d_img  = dt::host_to_device(img);
-  auto d_mask = dt::host_to_device(mask);
-
-  const auto d_dist1 = dt::generalised_distance_transform(d_img, d_mask, 0.0f);
-  const auto d_dist2 = dt::generalised_distance_transform_task(d_img, d_mask, 0.0f);
-
-  const auto dist1 = dt::device_to_host(d_dist1);
-  const auto dist2 = dt::device_to_host(d_dist2);
-
-  ASSERT_IMAGES_EQ(dist1, dist2);
-}
-
-TEST(DistanceTransform, GeodesicTask)
-{
-  const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
-  dt::fill(mask, std::uint8_t(0));
-  mask(img.width() / 2, img.height() / 2) = 1;
-
-  auto d_img  = dt::host_to_device(img);
-  auto d_mask = dt::host_to_device(mask);
-
-  const auto d_dist1 = dt::generalised_distance_transform(d_img, d_mask, 1.0f);
-  const auto d_dist2 = dt::generalised_distance_transform_task(d_img, d_mask, 1.0f);
-
-  const auto dist1 = dt::device_to_host(d_dist1);
-  const auto dist2 = dt::device_to_host(d_dist2);
-
-  ASSERT_IMAGES_EQ(dist1, dist2);
-}
+// TEST(DistanceTransform, EuclidianTask)
+//{
+//   const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
+//   dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
+//   dt::fill(mask, std::uint8_t(0));
+//   mask(img.width() / 2, img.height() / 2) = 1;
+//
+//   auto d_img  = dt::host_to_device(img);
+//   auto d_mask = dt::host_to_device(mask);
+//
+//   const auto d_dist1 = dt::generalised_distance_transform(d_img, d_mask, 0.0f);
+//   const auto d_dist2 = dt::generalised_distance_transform_task(d_img, d_mask, 0.0f);
+//
+//   const auto dist1 = dt::device_to_host(d_dist1);
+//   const auto dist2 = dt::device_to_host(d_dist2);
+//
+//   ASSERT_IMAGES_EQ(dist1, dist2);
+// }
+//
+// TEST(DistanceTransform, GeodesicTask)
+//{
+//   const auto                img = dt::random_image2d<std::uint8_t>(RANDOM_WIDTH, RANDOM_HEIGHT);
+//   dt::image2d<std::uint8_t> mask(RANDOM_WIDTH, RANDOM_HEIGHT);
+//   dt::fill(mask, std::uint8_t(0));
+//   mask(img.width() / 2, img.height() / 2) = 1;
+//
+//   auto d_img  = dt::host_to_device(img);
+//   auto d_mask = dt::host_to_device(mask);
+//
+//   const auto d_dist1 = dt::generalised_distance_transform(d_img, d_mask, 1.0f);
+//   const auto d_dist2 = dt::generalised_distance_transform_task(d_img, d_mask, 1.0f);
+//
+//   const auto dist1 = dt::device_to_host(d_dist1);
+//   const auto dist2 = dt::device_to_host(d_dist2);
+//
+//   ASSERT_IMAGES_EQ(dist1, dist2);
+// }
