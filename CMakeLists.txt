@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 project(distance_transform_benchmark C CXX CUDA)
 
-set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
+set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr --extended-lambda")
 
 option(BUILD_TESTING "Build the tests of the package" OFF)
 option(BUILD_BINARIES "Build the binaries of the project" OFF)
