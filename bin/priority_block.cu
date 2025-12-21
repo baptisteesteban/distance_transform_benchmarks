@@ -73,6 +73,8 @@ __global__ static void pass_T_manathan(std::uint32_t* distance, int width, int h
 
 void compute_block_priorities(const dt::image2d_view<std::uint8_t>& mask, std::uint8_t* priorities, std::uint32_t* cdf)
 {
+  assert(mask.memory_kind() == dt::e_memory_kind::GPU);
+
   const int      grid_width  = (mask.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
   const int      grid_height = (mask.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
   const int      N           = grid_width * grid_height;
@@ -90,23 +92,22 @@ void compute_block_priorities(const dt::image2d_view<std::uint8_t>& mask, std::u
     initialize_distance<<<grid_dim, block_dim>>>(mask, distance);
     cudaDeviceSynchronize();
   }
+
   // Four passes manathan distance computation
   {
     dim3 grid_dim((grid_height + BLOCK_SIZE - 1) / BLOCK_SIZE);
     dim3 block_dim(BLOCK_SIZE);
     pass_manathan<true><<<grid_dim, block_dim>>>(distance, grid_width, grid_height);
-    cudaDeviceSynchronize();
     pass_manathan<false><<<grid_dim, block_dim>>>(distance, grid_width, grid_height);
-    cudaDeviceSynchronize();
   }
   {
     dim3 grid_dim((grid_width + BLOCK_SIZE - 1) / BLOCK_SIZE);
     dim3 block_dim(BLOCK_SIZE);
     pass_T_manathan<true><<<grid_dim, block_dim>>>(distance, grid_width, grid_height);
-    cudaDeviceSynchronize();
     pass_T_manathan<false><<<grid_dim, block_dim>>>(distance, grid_width, grid_height);
-    cudaDeviceSynchronize();
   }
+  cudaDeviceSynchronize();
+
   // Normalization and CDF computation
   {
     const auto ptr            = thrust::device_pointer_cast(distance);
@@ -114,8 +115,12 @@ void compute_block_priorities(const dt::image2d_view<std::uint8_t>& mask, std::u
     // Normalization and priority computation from manathan distance
     const auto max_dist = *thrust::max_element(ptr, ptr + N);
     thrust::transform(ptr, ptr + N, priorities_ptr,
-                      [max_dist] __device__(const auto& v) { return (static_cast<float>(v) / max_dist) * 64; });
+                      [max_dist] __device__(const auto& v) { return (static_cast<float>(v) / max_dist) * 63; });
     // CDF
+    auto cdf_ptr = thrust::device_pointer_cast(cdf);
+    cudaMemset(cdf, 0, 64 * sizeof(std::uint32_t));
+    thrust::for_each(priorities_ptr, priorities_ptr + N, [cdf] __device__(const auto v) { atomicAdd(&cdf[v], 1); });
+    thrust::inclusive_scan(cdf_ptr, cdf_ptr + 64, cdf_ptr);
   }
   cudaFree(distance);
 }
@@ -142,11 +147,12 @@ int main(int argc, char* argv[])
   const auto mask   = dt::imread<std::uint8_t>(argv[1]);
   const auto d_mask = dt::host_to_device(mask);
 
-  const int      grid_width  = (mask.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-  const int      grid_height = (mask.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-  const int      N           = grid_width * grid_height;
-  std::uint8_t*  priorities  = nullptr;
-  std::uint32_t* cdf         = nullptr;
+  const int grid_width  = (mask.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  const int grid_height = (mask.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  const int N           = grid_width * grid_height;
+  std::cout << "Grid with " << N << " blocks\n";
+  std::uint8_t*  priorities = nullptr;
+  std::uint32_t* cdf        = nullptr;
   cudaMalloc(&priorities, N * sizeof(std::uint8_t)); // Priority of each block
   cudaMalloc(&cdf, 64 * sizeof(std::uint32_t)); // Cumulative distribution function of the priorities in a cuda grid
   compute_block_priorities(d_mask, priorities, cdf);
@@ -156,6 +162,13 @@ int main(int argc, char* argv[])
     dim3 grid_dim(grid_width, grid_height);
     dim3 block_dim(BLOCK_SIZE, BLOCK_SIZE);
     block_attribute_to_image<<<grid_dim, block_dim>>>(priorities, d_attr_img);
+  }
+  {
+    std::uint32_t* h_cdf = (std::uint32_t*)std::malloc(64 * sizeof(std::uint32_t));
+    cudaMemcpy(h_cdf, cdf, 64 * sizeof(std::uint32_t), cudaMemcpyDeviceToHost);
+    for (int i = 0; i < 63; i++)
+      std::cout << std::format("{:>3} ", h_cdf[i]);
+    std::cout << std::format("{:>3}\n", h_cdf[63]);
   }
   const auto attr_img = dt::device_to_host(d_attr_img);
   const auto colored  = dt::inferno(dt::normalize<std::uint8_t>(attr_img));
