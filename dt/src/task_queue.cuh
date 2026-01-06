@@ -1,6 +1,6 @@
 #pragma once
 
-#include <dt/image2d.hpp>
+#include <dt/image2d_view.hpp>
 
 #include <cuda/atomic>
 #include <cuda_runtime.h>
@@ -13,6 +13,8 @@
 
 #include "bitset.cuh"
 
+#include <cstdio>
+
 namespace dt
 {
   class HPQueue
@@ -22,30 +24,20 @@ namespace dt
     static_assert(MAX_PRIORITY <= sizeof(uint64_t) * CHAR_BIT,
                   "MAX_PRIORITY must be less than the number of bits in uint64_t");
 
-    // Initialize from host
-    HPQueue(int* storage, int* offsets);
+    HPQueue(int* storage, std::uint32_t* offsets);
 
-    /// @brief Schedule a task with a given priority
-    /// @param task
-    /// @param priory
-    /// @details Enqueue operations can be called concurrently from multiple threads but should not be called
-    /// concurrently with dequeue
     __device__ void enqueue(int task, int priority)
     {
       assert(priority >= 0 && priority < MAX_PRIORITY);
       int  pos   = m_count[priority]++;
       int* queue = m_base + m_offsets[priority];
+      // printf("(%d) p %d: %d\n", task, priority, m_offsets[priority]);
       if (priority < MAX_PRIORITY - 1)
         assert(0 <= pos && (m_offsets[priority] + pos) < m_offsets[priority + 1]);
       queue[pos] = task;
       m_flags |= (1UL << priority);
     }
 
-
-    /// @brief Pop the next task to be executed
-    /// @details Dequeue operations can be called concurrently from multiple threads but should not be called
-    /// concurrently with enqueue
-    /// @return -1 if the queue is empty, otherwise the task index
     __device__ int dequeue()
     {
       do
@@ -82,98 +74,72 @@ namespace dt
 
 
   private:
-    cuda::atomic<uint64_t, cuda::thread_scope_device> m_flags; // bitset of queue status
+    cuda::atomic<uint64_t, cuda::thread_scope_device> m_flags;
     cuda::atomic<int, cuda::thread_scope_device>      m_count[MAX_PRIORITY];
-    int*                                              m_base;    // Pointer to the storage (grid constant)
-    int*                                              m_offsets; // Array of offsets (grid constant)
+    int*                                              m_base;
+    std::uint32_t*                                    m_offsets;
   };
 
 
   struct DeviceTaskQueue
   {
-    int           gridDimX;
-    int           gridDimY;
-    Bitset        blockStatus; // Current active blocks
-    HPQueue*      currentQueue;
-    HPQueue*      nextQueue;
-    std::uint8_t* blockPriorities;
-    int           level0WorkSize;
+    int            gridDimX;
+    int            gridDimY;
+    Bitset         block_status;
+    HPQueue*       current_queue;
+    HPQueue*       next_queue;
+    std::uint8_t*  priorities;
+    std::uint32_t* cdf;
 
-
-    // Schedule the block (x,y) for execution in the next round
-    // Can be called concurrently from multiple threads
     __device__ bool enqueueTask(int x, int y)
     {
       int blockIndex = y * gridDimX + x;
 
-      // If the block was already active, do not enqueue it
-      if (blockStatus.test_and_set(blockIndex))
+      if (block_status.test_and_set(blockIndex))
         return false;
 
-      nextQueue->enqueue(blockIndex, blockPriorities[blockIndex]);
+      next_queue->enqueue(blockIndex, priorities[blockIndex]);
       return true;
     }
 
-
-    /// @brief Pop the next block to be executed in the current round
-    /// @details Can be called concurrently from multiple threads
-    /// @return -1 if the queue is empty, otherwise the block index
-    ///
-    /// @note Pop and enqueue operations on the same queue is not supported
     __device__ int popTask()
     {
-      int blockIndex = currentQueue->dequeue();
+      int blockIndex = current_queue->dequeue();
       if (blockIndex >= 0)
-        blockStatus.clear(blockIndex);
+        block_status.clear(blockIndex);
       return blockIndex;
     }
 
 
     __device__ uint64_t finishRound()
     {
-      std::swap(currentQueue, nextQueue);
-      return currentQueue->getFlags();
+      std::swap(current_queue, next_queue);
+      return current_queue->getFlags();
     }
+
+    __forceinline__ __device__ std::uint32_t level0_work_size() const { return cdf[0]; }
   };
 
 
   class TaskQueue
   {
   public:
-    TaskQueue(int gridDimX, int gridDimY, const dt::image2d_view<std::uint8_t>& mask, int block_size);
+    TaskQueue(const dt::image2d_view<std::uint8_t>& mask, int gridDimX, int gridDimY);
     ~TaskQueue();
 
-
-    // Host function to be called at the beginning of each round
-    // Returns the status of the queues (1 bit per queue). If the return value is 0, there are no more tasks to be
-    // executed
-    uint64_t finishRound();
-
-    DeviceTaskQueue getDeviceQueue()
+    DeviceTaskQueue get_device_queue()
     {
-      return {m_gridDimX,         m_gridDimY,     gActiveBlocks,    gHPQueue[m_round],
-              gHPQueue[!m_round], gBlockPriority, m_level0_worksize};
+      return {m_gridDimX, m_gridDimY, m_block_status, m_hpqueues[0], m_hpqueues[1], m_priorities, m_cdf};
     }
 
   private:
-    bool                m_round;           // Indicates if the current round is even or odd
-    int                 m_gridDimX;        // Number of blocks in the grid in the x direction
-    int                 m_gridDimY;        // Number of blocks in the grid in the y direction
-    int                 m_level0_worksize; // Number of blocks with priority 0
-    cudaTextureObject_t m_offsets;         // Array of offsets for the HPQueue (of type int32)
+    int            m_gridDimX;   // Number of columns of the grid
+    int            m_gridDimY;   // Number of rows of the grid
+    std::uint8_t*  m_priorities; // Priority of each block of the grid
+    std::uint32_t* m_cdf;        // Cumulative Distribution Function of the priorities
 
-
-    // Data allocated on the device
-    Bitset   gActiveBlocks; // Priority of each block in the grid
-    int*     gQueueStorage; // Storage for the queue data
-    HPQueue* gHPQueue[2]; // Queues of blocks to be executed in the EVEN round (gHPQueue[0]) and ODD round (gHPQueue[1])
-    std::uint8_t* gBlockPriority;
+    Bitset   m_block_status;   // Bitset indicating the status of a block (active or not)
+    int*     m_queues_storage; // Storage of the queue
+    HPQueue* m_hpqueues[2];    // Hierarchical priority queue
   };
-
-
-  inline uint64_t TaskQueue::finishRound()
-  {
-    m_round = !m_round;
-    return gHPQueue[m_round]->isEmpty();
-  }
 } // namespace dt

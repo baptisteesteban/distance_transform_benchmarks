@@ -32,6 +32,9 @@ namespace dt
     const int x           = bx * BLOCK_SIZE;
     const int y           = by * BLOCK_SIZE + threadIdx.x;
 
+    if (threadIdx.x == 0)
+      printf("Current block: (%d %d)\n", bx, by);
+
     {
       // tx and ty are the tile indices
       for (int tx = 0; tx < TILE_SIZE; ++tx)
@@ -85,7 +88,7 @@ namespace dt
     // Enqueue new active blocks
     if (threadIdx.x == 0)
     {
-      tq.blockStatus.clear(block_id);
+      tq.block_status.clear(block_id);
       if (block_changed != 0)
       {
         if ((bx > 0) && (block_changed & BLOCK_CHANGED_LEFT))
@@ -120,8 +123,8 @@ namespace dt
     std::uint64_t queue_flags = 1;
 
     const int NUM_WORKERS      = gridDim.x;
-    const int LEVEL_0_WORKSIZE = tq.level0WorkSize;
-    const int WORKER_JOB_SIZE  = std::max(10, LEVEL_0_WORKSIZE / NUM_WORKERS);
+    const int LEVEL_0_WORKSIZE = tq.level0_work_size();
+    const int WORKER_JOB_SIZE  = std::max<int>(10, LEVEL_0_WORKSIZE / NUM_WORKERS);
 
     while (queue_flags > 0)
     {
@@ -150,34 +153,34 @@ namespace dt
     const float local_dist[] = {std::sqrt(2.f), 1.f, std::sqrt(2.f)};
     cudaMemcpyToSymbol(local_dist2d, local_dist, 3 * sizeof(float));
 
+    const int grid_width  = (img.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    dim3      grid_dim(grid_width, grid_height);
     {
-      constexpr int INIT_BLOCK_SIZE = 32;
-      dim3          gridDim((D.width() + INIT_BLOCK_SIZE - 1) / INIT_BLOCK_SIZE,
-                            (D.height() + INIT_BLOCK_SIZE - 1) / INIT_BLOCK_SIZE);
-      dim3          blockDim(INIT_BLOCK_SIZE, INIT_BLOCK_SIZE);
-      initialize_generalised_distance_map<<<gridDim, blockDim>>>(mask, D, v);
+      dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
+      initialize_generalised_distance_map<<<grid_dim, blockDim>>>(mask, D, v);
       cudaDeviceSynchronize();
     }
 
-    const int grid_width  = (img.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    TaskQueue tq(grid_width, grid_height, mask, BLOCK_SIZE);
+    TaskQueue tq(mask, grid_width, grid_height);
     {
-      auto block_queue = tq.getDeviceQueue();
-      std::swap(block_queue.currentQueue, block_queue.nextQueue);
-      initialize_task_queue<<<1, 64>>>(block_queue);
+      auto block_queue = tq.get_device_queue();
+      std::swap(block_queue.next_queue, block_queue.current_queue);
+      initialize_task_queue<true><<<grid_dim, 1>>>(block_queue);
+      cudaDeviceSynchronize();
     }
 
     const int      num_blocks_per_sm = 4;
     cudaDeviceProp device_prop;
     cudaGetDeviceProperties(&device_prop, 0);
 
-    auto                       block_queue = tq.getDeviceQueue();
+    auto                       block_queue = tq.get_device_queue();
     image2d_view<std::uint8_t> nc_img(img);
     void*                      kernelArgs[] = {&nc_img, &D, &l_grad, &l_eucl, &v, &block_queue};
     dim3                       dim_grid(device_prop.multiProcessorCount * num_blocks_per_sm);
     cudaLaunchCooperativeKernel((void*)block_propagation, dim_grid, BLOCK_SIZE, kernelArgs);
 
+    cudaDeviceSynchronize();
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
   }

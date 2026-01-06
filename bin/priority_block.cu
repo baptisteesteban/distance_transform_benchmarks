@@ -47,13 +47,20 @@ int main(int argc, char* argv[])
     dim3 block_dim(BLOCK_SIZE, BLOCK_SIZE);
     block_attribute_to_image<<<grid_dim, block_dim>>>(priorities, d_attr_img);
   }
+
   {
-    std::uint32_t* h_cdf = (std::uint32_t*)std::malloc(64 * sizeof(std::uint32_t));
-    cudaMemcpy(h_cdf, cdf, 64 * sizeof(std::uint32_t), cudaMemcpyDeviceToHost);
-    for (int i = 0; i < 63; i++)
-      std::cout << std::format("{:>3} ", h_cdf[i]);
-    std::cout << std::format("{:>3}\n", h_cdf[63]);
+    std::uint8_t* h_priority = (std::uint8_t*)std::malloc(N * sizeof(std::uint8_t));
+    cudaMemcpy(h_priority, priorities, N * sizeof(std::uint8_t), cudaMemcpyDeviceToHost);
+    for (int y = 0; y < grid_height; y++)
+    {
+      for (int x = 0; x < grid_width - 1; x++)
+        std::cout << std::format("{:2} ", h_priority[y * grid_width + x]);
+      std::cout << std::format("{:2}\n", h_priority[y * grid_width + grid_width - 1]);
+    }
+    std::free(h_priority);
   }
+
+
   const auto attr_img = dt::device_to_host(d_attr_img);
   const auto colored  = dt::inferno(dt::normalize<std::uint8_t>(attr_img));
   dt::imsave("priorities.png", colored);

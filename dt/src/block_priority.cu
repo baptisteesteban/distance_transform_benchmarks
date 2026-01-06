@@ -1,7 +1,9 @@
 #include <dt/block_priority.hpp>
 
 #include <thrust/device_ptr.h>
+#include <thrust/device_vector.h>
 #include <thrust/extrema.h>
+#include <thrust/transform.h>
 
 #include "utils.cuh"
 
@@ -104,20 +106,23 @@ namespace dt
     }
     cudaDeviceSynchronize();
 
-    // Normalization and CDF computation
+    // Distance CDF computation
+    const auto                           distance_ptr = thrust::device_pointer_cast(distance);
+    const auto                           max_dist     = *thrust::max_element(distance_ptr, distance_ptr + N);
+    thrust::device_vector<std::uint32_t> distance_cdf(max_dist + 1, 0);
+    thrust::for_each(
+        distance_ptr, distance_ptr + N,
+        [cdf = thrust::raw_pointer_cast(distance_cdf.data())] __device__(const auto v) { atomicAdd(&cdf[v], 1u); });
+    thrust::inclusive_scan(distance_cdf.begin(), distance_cdf.end(), distance_cdf.begin());
+
+    // Priority computation
+    const auto priorities_ptr = thrust::device_pointer_cast(priorities);
     {
-      const auto ptr            = thrust::device_pointer_cast(distance);
-      auto       priorities_ptr = thrust::device_pointer_cast(priorities);
-      // Normalization and priority computation from manathan distance
-      const auto max_dist = *thrust::max_element(ptr, ptr + N);
-      thrust::transform(ptr, ptr + N, priorities_ptr,
-                        [max_dist] __device__(const auto& v) { return (static_cast<float>(v) / max_dist) * 63; });
-      // CDF
-      auto cdf_ptr = thrust::device_pointer_cast(cdf);
-      cudaMemset(cdf, 0, 64 * sizeof(std::uint32_t));
-      thrust::for_each(priorities_ptr, priorities_ptr + N, [cdf] __device__(const auto v) { atomicAdd(&cdf[v], 1); });
-      thrust::inclusive_scan(cdf_ptr, cdf_ptr + 64, cdf_ptr);
+      const int total = N + 1;
+      thrust::transform(distance_ptr, distance_ptr + N, priorities_ptr,
+                        [total, cdf = distance_cdf.data()] __device__(auto d) { return cdf[d] * 64 / total; });
     }
+
     cudaFree(distance);
   }
 } // namespace dt

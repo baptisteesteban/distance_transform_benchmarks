@@ -10,6 +10,20 @@
 #include <format>
 #include <iostream>
 
+template <typename T>
+void imprint2d_clip(const dt::image2d_view<T>& img, int x, int y, int w, int h)
+{
+  assert(img.memory_kind() == dt::e_memory_kind::CPU);
+  const int max_x = std::min(img.width(), x + w) - 1;
+  for (int cy = x; cy < std::min(img.height(), y + h); cy++)
+  {
+    std::cout << "[";
+    for (int cx = x; cx < max_x; cx++)
+      std::cout << std::format("{}, ", img(cx, cy));
+    std::cout << std::format("{}]\n", img(max_x, cy));
+  }
+}
+
 int main(int argc, char* argv[])
 {
   if (argc < 4)
@@ -49,7 +63,7 @@ int main(int argc, char* argv[])
 
   const auto d_img   = dt::host_to_device(img);
   const auto d_mask  = dt::host_to_device(mask);
-  const auto d_dist  = dt::generalised_distance_transform_chessboard(d_img, d_mask, lambda);
+  const auto d_dist  = dt::generalised_distance_transform_task(d_img, d_mask, lambda);
   const auto dist    = dt::device_to_host(d_dist);
   const auto norm    = dt::normalize<std::uint8_t>(dist);
   const auto colored = dt::inferno(norm);
