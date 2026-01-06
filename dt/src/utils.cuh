@@ -40,9 +40,7 @@ namespace dt
       if (blockIdx.x % 2 == blockIdx.y % 2)
         return;
     }
-    const int bid = blockIdx.y * gridDim.x + blockIdx.x;
-    if (tq.priorities[bid] == 0)
-      tq.enqueueTask(blockIdx.x, blockIdx.y);
+    tq.enqueueTask(blockIdx.x, blockIdx.y);
   }
 
   __forceinline__ __device__ std::uint8_t clamp(std::uint8_t v, std::uint8_t m, std::uint8_t M)
