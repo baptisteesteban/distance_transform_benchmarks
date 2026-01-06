@@ -121,26 +121,30 @@ namespace dt
     thrust::transform(distance_ptr, distance_ptr + N, priorities_ptr,
                       [total, cdf = distance_cdf.data()] __device__(auto d) { return cdf[d] * 64 / total; });
 
-
-    // Priority CDF computation
-    thrust::for_each(thrust::make_counting_iterator(0), thrust::make_counting_iterator<int>(max_dist),
-                     [dist_cdf = distance_cdf.data(), total, cdf] __device__(const auto d) {
-                       const auto priority = dist_cdf[d] * 64 / total;
-                       cdf[priority + 1]   = dist_cdf[d];
-                     });
-
+    // Priority computation (host side)
     {
-      std::uint32_t host_cdf[64];
-      cudaMemcpy(host_cdf, cdf, 64 * sizeof(std::uint32_t), cudaMemcpyDeviceToHost);
-      for (int i = 1; i < 64; ++i)
+      std::uint32_t h_cdf[64];
+      std::memset(h_cdf, 0, 64 * sizeof(std::uint32_t));
+      std::uint32_t* h_distance_cdf = (std::uint32_t*)std::malloc((max_dist + 1) * sizeof(std::uint32_t));
+      cudaMemcpy(h_distance_cdf, thrust::raw_pointer_cast(distance_cdf.data()), (max_dist + 1) * sizeof(std::uint32_t),
+                 cudaMemcpyDeviceToHost);
+
+      for (int d = 0; d < max_dist; d++)
       {
-        if (host_cdf[i] == 0)
-          host_cdf[i] = host_cdf[i - 1];
-        else
-          host_cdf[i] = host_cdf[i] + 1;
-        assert(host_cdf[i] >= host_cdf[i - 1]);
+        const auto count    = h_distance_cdf[d];
+        int        priority = count * 64 / total;
+        h_cdf[priority + 1] = count;
       }
-      cudaMemcpy(cdf, host_cdf, 64 * sizeof(std::uint32_t), cudaMemcpyHostToDevice);
+
+      for (int i = 1; i < 64; i++)
+      {
+        if (h_cdf[i] == 0)
+          h_cdf[i] = h_cdf[i - 1];
+        else
+          h_cdf[i]++;
+      }
+      cudaMemcpy(cdf, h_cdf, 64 * sizeof(std::uint32_t), cudaMemcpyHostToDevice);
+      std::free(h_distance_cdf);
     }
 
     cudaFree(distance);
