@@ -23,7 +23,7 @@ target_sources(dt-core PRIVATE
     src/utils.cu
     src/task_queue.cu
     src/generalised_distance_transform.cu
-    src/generalised_distance_transform_chessboard.cu
+    src/generalised_distance_transform_blocks.cu
     src/generalised_distance_transform_task.cu
 )
 target_include_directories(dt-core PUBLIC include)

@@ -123,12 +123,9 @@ struct BMDistanceTransformGeos : public DistanceTransformFixture
   void exec(benchmark::State&) const override { dt::generalised_distance_transform(m_img, m_mask, m_lambda); }
 };
 
-struct BMDistanceTransformChessboard : public DistanceTransformFixture
+struct BMDistanceTransformBlocks : public DistanceTransformFixture
 {
-  void exec(benchmark::State&) const override
-  {
-    dt::generalised_distance_transform_chessboard(m_img, m_mask, m_lambda);
-  }
+  void exec(benchmark::State&) const override { dt::generalised_distance_transform_blocks(m_img, m_mask, m_lambda); }
 };
 
 struct BMDistanceTransformTask : public DistanceTransformFixture
@@ -142,7 +139,7 @@ BENCHMARK_DEFINE_F(BMDistanceTransformGeos, BMDistanceTransformGeos)(benchmark::
   run(state);
 }
 
-BENCHMARK_DEFINE_F(BMDistanceTransformChessboard, BMDistanceTransformChessboard)(benchmark::State& state)
+BENCHMARK_DEFINE_F(BMDistanceTransformBlocks, BMDistanceTransformBlocks)(benchmark::State& state)
 {
   run(state);
 }
@@ -158,11 +155,11 @@ BENCHMARK_REGISTER_F(BMDistanceTransformGeos, BMDistanceTransformGeos)
     ->UseManualTime()
     ->Name("DistanceTransformGeos");
 
-BENCHMARK_REGISTER_F(BMDistanceTransformChessboard, BMDistanceTransformChessboard)
+BENCHMARK_REGISTER_F(BMDistanceTransformBlocks, BMDistanceTransformBlocks)
     ->Apply(build_argument)
     ->Unit(TIME_UNIT)
     ->UseManualTime()
-    ->Name("DistanceTransformChessboard");
+    ->Name("DistanceTransformBlocks");
 
 BENCHMARK_REGISTER_F(BMDistanceTransformTask, BMDistanceTransformTask)
     ->Apply(build_argument)

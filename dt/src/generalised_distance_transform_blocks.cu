@@ -1,60 +1,20 @@
-// #define ILLUSTRATIONS_ENABLED
-
 #include <dt/image2d.hpp>
-
-#ifdef ILLUSTRATIONS_ENABLED
-#include <dt/imsave.hpp>
-#include <dt/inferno.hpp>
-#include <dt/normalize.hpp>
-#include <dt/transfert.hpp>
-#endif
 
 #include "dt_block_passes.cuh"
 #include "utils.cuh"
-#include <thrust/device_ptr.h>
-#include <thrust/functional.h>
-#include <thrust/transform.h>
-
 
 namespace dt
 {
-#ifdef ILLUSTRATIONS_ENABLED
-  __global__ static void propagation_to_image(image2d_view<std::uint16_t>& out, const std::uint16_t* propagated)
-  {
-    const int bx  = blockIdx.x;
-    const int by  = blockIdx.y;
-    const int bid = by * gridDim.x + bx;
-    const int x   = bx * BLOCK_SIZE + threadIdx.x;
-    const int y   = by * BLOCK_SIZE + threadIdx.y;
-
-    if (x < out.width() && y < out.height())
-      out(x, y) = propagated[bid];
-  }
-#endif
-
   __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float v,
                                            float l_eucl, float l_grad, bool even, bool* active, bool* active_candidate,
-                                           bool* changed
-#ifdef ILLUSTRATIONS_ENABLED
-                                           ,
-                                           std::uint16_t* propagated
-#endif
-  )
+                                           bool* changed)
   {
     const int bx  = blockIdx.x;
     const int by  = blockIdx.y;
     const int bid = by * gridDim.x + bx;
 
-    if (!even && bx % 2 == by % 2)
-      return;
-    if (even && bx % 2 != by % 2)
-      return;
     if (!active[bid])
       return;
-#ifdef ILLUSTRATIONS_ENABLED
-    if (threadIdx.x == 0)
-      propagated[bid] += 1;
-#endif
 
     const int x = bx * BLOCK_SIZE;
     const int y = by * BLOCK_SIZE + threadIdx.x;
@@ -149,9 +109,9 @@ namespace dt
     __syncthreads();
   }
 
-  void generalised_distance_transform_chessboard(const image2d_view<std::uint8_t>& img,
-                                                 const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
-                                                 float lambda, float v)
+  void generalised_distance_transform_blocks(const image2d_view<std::uint8_t>& img,
+                                             const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
+                                             float lambda, float v)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
@@ -163,6 +123,7 @@ namespace dt
     const float local_dist[] = {std::sqrt(2.f), 1.f, std::sqrt(2.f)};
     cudaMemcpyToSymbol(local_dist2d, local_dist, 3 * sizeof(float));
 
+    // Initialization
     {
       dim3 gridDim((D.width() + 31) / 32, (D.height() + 31) / 32);
       dim3 blockDim(32, 32);
@@ -170,71 +131,51 @@ namespace dt
       cudaDeviceSynchronize();
     }
 
+    // Convergence
     bool* changed;
     cudaMallocManaged(&changed, sizeof(bool));
     *changed = true;
 
+    // Kernel parameters
     const int grid_width  = (img.width() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     const int grid_height = (img.height() + BLOCK_SIZE - 1) / BLOCK_SIZE;
     dim3      grid_dim(grid_width, grid_height);
     dim3      block_dim(BLOCK_SIZE);
 
+    // Active block for current round and next round
     const auto size = grid_width * grid_height;
-    bool*      active;
-    bool*      active_candidate;
-    cudaMalloc(&active, size * sizeof(bool));
-    cudaMemset(active, true, size * sizeof(bool));
-    cudaMalloc(&active_candidate, size * sizeof(bool));
-    cudaMemset(active_candidate, false, size * sizeof(bool));
-    auto d_active           = thrust::device_pointer_cast(active);
-    auto d_active_candidate = thrust::device_pointer_cast(active_candidate);
-#ifdef ILLUSTRATIONS_ENABLED
-    std::uint16_t* propagated;
-    cudaMalloc(&propagated, grid_width * grid_height * sizeof(std::uint16_t));
-    cudaMemset(propagated, 0, grid_width * grid_height * sizeof(std::uint16_t));
-#endif
-    bool even = true;
+    bool*      active[2];
+    cudaMalloc(&active[0], size * sizeof(bool));
+    cudaMemset(active[0], true, size * sizeof(bool));
+    cudaMalloc(&active[1], size * sizeof(bool));
+    cudaMemset(active[1], false, size * sizeof(bool));
+
+    bool even = false;
     while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, even, active, active_candidate, changed
-#ifdef ILLUSTRATIONS_ENABLED
-                                                 ,
-                                                 propagated
-#endif
-      );
-      thrust::transform(d_active, d_active + size, d_active_candidate, d_active, thrust::logical_or<bool>());
-      thrust::fill(d_active_candidate, d_active_candidate + size, false);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, even, active[even], active[!even], changed);
       even = !even;
       cudaDeviceSynchronize();
     }
+
+    // Free memory
+    cudaFree(active[0]);
+    cudaFree(active[1]);
     cudaFree(changed);
-    cudaFree(active);
-#ifdef ILLUSTRATIONS_ENABLED
-    {
-      dim3                   block_dim_k(BLOCK_SIZE, BLOCK_SIZE);
-      image2d<std::uint16_t> d_propagated_img(img.width(), img.height(), e_memory_kind::GPU);
-      propagation_to_image<<<grid_dim, block_dim_k>>>(d_propagated_img, propagated);
-      cudaDeviceSynchronize();
-      const auto propagated_img = dt::device_to_host(d_propagated_img);
-      const auto normalized     = dt::normalize<std::uint8_t>(propagated_img);
-      const auto colored        = dt::inferno(normalized);
-      dt::imsave("propagated.png", colored);
-    }
-    cudaFree(propagated);
-#endif
+
+    // Handle error
     if (const auto err = cudaGetLastError(); err != cudaSuccess)
       throw std::runtime_error(std::format("Error while running distance transform: {}", cudaGetErrorString(err)));
   }
 
-  image2d<float> generalised_distance_transform_chessboard(const image2d_view<std::uint8_t>& img,
-                                                           const image2d_view<std::uint8_t>& mask, float lambda,
-                                                           float v)
+  image2d<float> generalised_distance_transform_blocks(const image2d_view<std::uint8_t>& img,
+                                                       const image2d_view<std::uint8_t>& mask, float lambda, float v)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    generalised_distance_transform_chessboard(img, mask, D, lambda, v);
+    generalised_distance_transform_blocks(img, mask, D, lambda, v);
     return D;
   }
 } // namespace dt
