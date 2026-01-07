@@ -17,6 +17,36 @@
 
 namespace dt
 {
+  class FarStack
+  {
+  public:
+    FarStack(int* storage);
+
+    __device__ void push(int id)
+    {
+      int current        = m_size++;
+      m_storage[current] = id;
+    }
+    __device__ int pop()
+    {
+      while (true)
+      {
+        int old_size = m_size.load(cuda::memory_order_acquire);
+        if (old_size <= 0)
+          return -1;
+        if (m_size.compare_exchange_weak(old_size, old_size - 1, cuda::memory_order_release,
+                                         cuda::memory_order_relaxed))
+        {
+          return m_storage[old_size - 1];
+        }
+      }
+    }
+
+  private:
+    cuda::atomic<int, cuda::thread_scope_device> m_size;
+    int*                                         m_storage;
+  };
+
   class HPQueue
   {
   public:
@@ -83,13 +113,16 @@ namespace dt
 
   struct DeviceTaskQueue
   {
-    int            gridDimX;
-    int            gridDimY;
-    Bitset         block_status;
-    HPQueue*       current_queue;
-    HPQueue*       next_queue;
-    std::uint8_t*  priorities;
-    std::uint32_t* cdf;
+    int           gridDimX;
+    int           gridDimY;
+    Bitset        block_status;
+    HPQueue*      current_queue;
+    HPQueue*      next_queue;
+    std::uint8_t* priorities;
+    int           level0_worksize;
+
+    FarStack* far_stack;
+    Bitset    far_status;
 
     __device__ bool enqueueTask(int x, int y)
     {
@@ -105,19 +138,29 @@ namespace dt
     __device__ int popTask()
     {
       int blockIndex = current_queue->dequeue();
-      if (blockIndex >= 0)
-        block_status.clear(blockIndex);
       return blockIndex;
     }
 
+    __device__ void clearBlockStatus(int blockIndex) { block_status.clear(blockIndex); }
+
+    __device__ void enqueueFar(int x, int y)
+    {
+      int bid = y * gridDimX + x;
+      if (far_status.test_and_set(bid))
+        return;
+      far_stack->push(bid);
+    }
 
     __device__ uint64_t finishRound()
     {
       std::swap(current_queue, next_queue);
-      return current_queue->getFlags();
+      for (int id = far_stack->pop(); id >= 0; id = far_stack->pop())
+      {
+        far_status.clear(id);
+        enqueueTask(id % gridDimX, id / gridDimX);
+      }
+      return current_queue->getFlags() | next_queue->getFlags();
     }
-
-    __forceinline__ __device__ std::uint32_t level0_work_size() const { return cdf[0]; }
   };
 
 
@@ -129,7 +172,8 @@ namespace dt
 
     DeviceTaskQueue get_device_queue()
     {
-      return {m_gridDimX, m_gridDimY, m_block_status, m_hpqueues[0], m_hpqueues[1], m_priorities, m_cdf};
+      return {m_gridDimX,   m_gridDimY,        m_block_status, m_hpqueues[0], m_hpqueues[1],
+              m_priorities, m_level0_worksize, m_far_stack,    m_far_status};
     }
 
   private:
@@ -137,9 +181,15 @@ namespace dt
     int            m_gridDimY;   // Number of rows of the grid
     std::uint8_t*  m_priorities; // Priority of each block of the grid
     std::uint32_t* m_cdf;        // Cumulative Distribution Function of the priorities
+    int            m_level0_worksize;
 
     Bitset   m_block_status;   // Bitset indicating the status of a block (active or not)
     int*     m_queues_storage; // Storage of the queue
     HPQueue* m_hpqueues[2];    // Hierarchical priority queue
+
+    // Far Stack
+    int*      m_far_storage;
+    FarStack* m_far_stack;
+    Bitset    m_far_status;
   };
 } // namespace dt

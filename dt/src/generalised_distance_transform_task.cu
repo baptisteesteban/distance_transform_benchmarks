@@ -32,9 +32,6 @@ namespace dt
     const int x           = bx * BLOCK_SIZE;
     const int y           = by * BLOCK_SIZE + threadIdx.x;
 
-    if (threadIdx.x == 0)
-      printf("Current block: (%d %d)\n", bx, by);
-
     {
       // tx and ty are the tile indices
       for (int tx = 0; tx < TILE_SIZE; ++tx)
@@ -88,7 +85,6 @@ namespace dt
     // Enqueue new active blocks
     if (threadIdx.x == 0)
     {
-      tq.block_status.clear(block_id);
       if (block_changed != 0)
       {
         if ((bx > 0) && (block_changed & BLOCK_CHANGED_LEFT))
@@ -99,6 +95,15 @@ namespace dt
           tq.enqueueTask(bx, by - 1);
         if ((by < grid_height - 1) && (block_changed & BLOCK_CHANGED_BOTTOM))
           tq.enqueueTask(bx, by + 1);
+
+        if (bx > 0 && by > 0 && block_changed & BLOCK_CHANGED_TOP_LEFT)
+          tq.enqueueFar(bx - 1, by - 1);
+        if (bx < grid_width - 1 && by > 0 && block_changed & BLOCK_CHANGED_TOP_RIGHT)
+          tq.enqueueFar(bx + 1, by - 1);
+        if (bx > 0 && by < grid_height - 1 && block_changed & BLOCK_CHANGED_BOTTOM_LEFT)
+          tq.enqueueFar(bx - 1, by + 1);
+        if (bx < grid_width - 1 && by < grid_height - 1 && block_changed & BLOCK_CHANGED_BOTTOM_RIGHT)
+          tq.enqueueFar(bx + 1, by + 1);
       }
     }
     __syncthreads();
@@ -113,6 +118,11 @@ namespace dt
     }
     __syncthreads();
 
+    // Clear block status after writing results, allowing re-enqueue by neighbors
+    if (threadIdx.x == 0)
+      tq.clearBlockStatus(block_id);
+    __syncthreads();
+
     return true;
   }
 
@@ -123,7 +133,7 @@ namespace dt
     std::uint64_t queue_flags = 1;
 
     const int NUM_WORKERS      = gridDim.x;
-    const int LEVEL_0_WORKSIZE = tq.level0_work_size();
+    const int LEVEL_0_WORKSIZE = tq.level0_worksize;
     const int WORKER_JOB_SIZE  = std::max<int>(10, LEVEL_0_WORKSIZE / NUM_WORKERS);
 
     while (queue_flags > 0)
@@ -165,6 +175,7 @@ namespace dt
     TaskQueue tq(mask, grid_width, grid_height);
     {
       auto block_queue = tq.get_device_queue();
+      initialize_task_queue<false><<<grid_dim, 1>>>(block_queue);
       std::swap(block_queue.next_queue, block_queue.current_queue);
       initialize_task_queue<true><<<grid_dim, 1>>>(block_queue);
       cudaDeviceSynchronize();

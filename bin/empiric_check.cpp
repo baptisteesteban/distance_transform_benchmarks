@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
   dt::image2d<std::uint8_t> mask = dt::image2d<std::uint8_t>(img.width(), img.height());
 
 
-  const auto temp_mask = dt::imread<std::uint8_t>(argv[4]);
+  const auto temp_mask = dt::imread<std::uint8_t>(argv[3]);
   if (temp_mask.width() != img.width() || temp_mask.height() != img.height())
   {
     std::cerr << std::format("Invalid mask shape (Got (w: {} h: {}), expected (w: {} h: {}))", temp_mask.width(),
@@ -45,20 +45,28 @@ int main(int argc, char* argv[])
   const auto d_img      = dt::host_to_device(img);
   const auto d_mask     = dt::host_to_device(mask);
   const auto d_dist_ref = dt::generalised_distance_transform(d_img, d_mask, lambda);
-  const auto d_dist     = dt::generalised_distance_transform_chessboard(d_img, d_mask, lambda);
+  const auto d_dist     = dt::generalised_distance_transform_task(d_img, d_mask, lambda);
   const auto dist_ref   = dt::device_to_host(d_dist_ref);
   const auto dist       = dt::device_to_host(d_dist);
 
+  int diff_count = 0;
   for (int y = 0; y < img.height(); y++)
   {
     for (int x = 0; x < img.width(); x++)
     {
       if (dist(x, y) != dist_ref(x, y))
       {
-        std::cerr << "Different value at (" << x << ", " << y << ")\n";
-        return 1;
+        if (diff_count < 5)
+          std::cerr << "Different value at (" << x << ", " << y << "): got " << dist(x, y) << ", expected "
+                    << dist_ref(x, y) << "\n";
+        diff_count++;
       }
     }
+  }
+  if (diff_count > 0)
+  {
+    std::cerr << "Total differences: " << diff_count << " / " << (img.width() * img.height()) << "\n";
+    return 1;
   }
   return 0;
 }

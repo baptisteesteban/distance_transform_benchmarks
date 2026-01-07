@@ -68,8 +68,8 @@ namespace dt
     }
   }
 
-  void compute_block_priorities(const dt::image2d_view<std::uint8_t>& mask, std::uint8_t* priorities,
-                                std::uint32_t* cdf)
+  std::uint32_t compute_block_priorities(const dt::image2d_view<std::uint8_t>& mask, std::uint8_t* priorities,
+                                         std::uint32_t* cdf)
   {
     assert(mask.memory_kind() == dt::e_memory_kind::GPU);
 
@@ -114,6 +114,8 @@ namespace dt
         distance_ptr, distance_ptr + N,
         [cdf = thrust::raw_pointer_cast(distance_cdf.data())] __device__(const auto v) { atomicAdd(&cdf[v], 1u); });
     thrust::inclusive_scan(distance_cdf.begin(), distance_cdf.end(), distance_cdf.begin());
+    std::uint32_t level0;
+    cudaMemcpy(&level0, thrust::raw_pointer_cast(distance_cdf.data()), sizeof(std::uint32_t), cudaMemcpyDeviceToHost);
 
     // Priority computation
     const auto priorities_ptr = thrust::device_pointer_cast(priorities);
@@ -122,31 +124,33 @@ namespace dt
                       [total, cdf = distance_cdf.data()] __device__(auto d) { return cdf[d] * 64 / total; });
 
     // Priority computation (host side)
+    // Build offsets per priority by copying the priorities array back to host
     {
-      std::uint32_t h_cdf[64];
-      std::memset(h_cdf, 0, 64 * sizeof(std::uint32_t));
-      std::uint32_t* h_distance_cdf = (std::uint32_t*)std::malloc((max_dist + 1) * sizeof(std::uint32_t));
-      cudaMemcpy(h_distance_cdf, thrust::raw_pointer_cast(distance_cdf.data()), (max_dist + 1) * sizeof(std::uint32_t),
-                 cudaMemcpyDeviceToHost);
+      std::vector<std::uint8_t> h_priorities(N);
+      cudaMemcpy(h_priorities.data(), priorities, N * sizeof(std::uint8_t), cudaMemcpyDeviceToHost);
 
-      for (int d = 0; d < max_dist; d++)
+      std::uint32_t counts[64];
+      std::memset(counts, 0, sizeof(counts));
+      for (int i = 0; i < N; ++i)
       {
-        const auto count    = h_distance_cdf[d];
-        int        priority = count * 64 / total;
-        h_cdf[priority + 1] = count;
+        const int p = h_priorities[i];
+        if (p >= 0 && p < 64)
+          counts[p]++;
       }
 
-      for (int i = 1; i < 64; i++)
+      std::uint32_t offsets[64];
+      std::uint32_t acc = 0;
+      for (int i = 0; i < 64; ++i)
       {
-        if (h_cdf[i] == 0)
-          h_cdf[i] = h_cdf[i - 1];
-        else
-          h_cdf[i]++;
+        offsets[i] = acc;
+        acc += counts[i];
       }
-      cudaMemcpy(cdf, h_cdf, 64 * sizeof(std::uint32_t), cudaMemcpyHostToDevice);
-      std::free(h_distance_cdf);
+
+      cudaMemcpy(cdf, offsets, 64 * sizeof(std::uint32_t), cudaMemcpyHostToDevice);
     }
 
     cudaFree(distance);
+
+    return level0;
   }
 } // namespace dt
