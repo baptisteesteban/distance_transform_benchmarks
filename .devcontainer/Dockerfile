@@ -11,7 +11,8 @@ RUN apt update -y && \
     libgtest-dev \
     curl \
     libbenchmark-dev  \
-    wget && \
+    wget \
+    git && \
     rm -rf /var/lib/apt/lists/*
 
 USER ubuntu

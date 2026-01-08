@@ -14,7 +14,7 @@ static constexpr float LAMBDAS[] = {0.0, 0.5, 1.0};
 
 // Image loading
 
-static constexpr const char* IMAGES_DIR = "/data/condat/gray_png";
+static constexpr const char* IMAGES_DIR = "/data/dt_images";
 
 static std::vector<std::filesystem::path> bench_filenames;
 
@@ -44,7 +44,6 @@ static void build_argument(benchmark::internal::Benchmark* b)
   {
     for (int j = 0; j < 3; j++)
       b->Args({i, j});
-    break;
   }
 }
 
