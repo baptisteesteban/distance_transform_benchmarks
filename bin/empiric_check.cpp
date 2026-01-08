@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   const auto d_img      = dt::host_to_device(img);
   const auto d_mask     = dt::host_to_device(mask);
   const auto d_dist_ref = dt::generalised_distance_transform(d_img, d_mask, lambda);
-  const auto d_dist     = dt::generalised_distance_transform_blocks(d_img, d_mask, lambda);
+  const auto d_dist     = dt::generalised_distance_transform_task(d_img, d_mask, lambda);
   const auto dist_ref   = dt::device_to_host(d_dist_ref);
   const auto dist       = dt::device_to_host(d_dist);
 

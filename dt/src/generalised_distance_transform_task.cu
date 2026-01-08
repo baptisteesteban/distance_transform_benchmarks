@@ -97,13 +97,13 @@ namespace dt
           tq.enqueueTask(bx, by + 1);
 
         if (bx > 0 && by > 0 && block_changed & BLOCK_CHANGED_TOP_LEFT)
-          tq.enqueueFar(bx - 1, by - 1);
+          tq.enqueueTask(bx - 1, by - 1);
         if (bx < grid_width - 1 && by > 0 && block_changed & BLOCK_CHANGED_TOP_RIGHT)
-          tq.enqueueFar(bx + 1, by - 1);
+          tq.enqueueTask(bx + 1, by - 1);
         if (bx > 0 && by < grid_height - 1 && block_changed & BLOCK_CHANGED_BOTTOM_LEFT)
-          tq.enqueueFar(bx - 1, by + 1);
+          tq.enqueueTask(bx - 1, by + 1);
         if (bx < grid_width - 1 && by < grid_height - 1 && block_changed & BLOCK_CHANGED_BOTTOM_RIGHT)
-          tq.enqueueFar(bx + 1, by + 1);
+          tq.enqueueTask(bx + 1, by + 1);
       }
     }
     __syncthreads();
@@ -175,9 +175,9 @@ namespace dt
     TaskQueue tq(mask, grid_width, grid_height);
     {
       auto block_queue = tq.get_device_queue();
-      initialize_task_queue<false><<<grid_dim, 1>>>(block_queue);
-      std::swap(block_queue.next_queue, block_queue.current_queue);
-      initialize_task_queue<true><<<grid_dim, 1>>>(block_queue);
+      std::swap(block_queue.current_queue, block_queue.next_queue);
+      std::swap(block_queue.current_block_status, block_queue.next_block_status);
+      initialize_task_queue<<<grid_dim, 1>>>(block_queue);
       cudaDeviceSynchronize();
     }
 

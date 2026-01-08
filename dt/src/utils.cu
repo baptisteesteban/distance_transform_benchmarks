@@ -11,4 +11,9 @@ namespace dt
     if (x < D.width() && y < D.height())
       D(x, y) = v * (mask(x, y) == 0);
   }
+
+  __global__ void initialize_task_queue(DeviceTaskQueue tq)
+  {
+    tq.enqueueTask(blockIdx.x, blockIdx.y);
+  }
 } // namespace dt

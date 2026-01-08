@@ -27,21 +27,7 @@ namespace dt
   __global__ void initialize_generalised_distance_map(const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
                                                       float v);
 
-  template <bool Even>
-  __global__ void initialize_task_queue(DeviceTaskQueue tq)
-  {
-    if constexpr (Even)
-    {
-      if (blockIdx.x % 2 != blockIdx.y % 2)
-        return;
-    }
-    else
-    {
-      if (blockIdx.x % 2 == blockIdx.y % 2)
-        return;
-    }
-    tq.enqueueTask(blockIdx.x, blockIdx.y);
-  }
+  __global__ void initialize_task_queue(DeviceTaskQueue tq);
 
   __forceinline__ __device__ std::uint8_t clamp(std::uint8_t v, std::uint8_t m, std::uint8_t M)
   {
