@@ -1,0 +1,19 @@
+[project]
+name = "dt-bench-analysis"
+version = "0.1.0"
+description = "Notebook and environment to analyze distance transform benchmark results"
+requires-python = ">=3.10"
+
+dependencies = [
+  "pandas>=2.0",
+  "matplotlib>=3.7",
+  "seaborn>=0.12",
+  "notebook>=6.5",
+  "ipykernel>=6.0",
+  "plotly>=5.0",
+  "uvicorn>=0.22"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

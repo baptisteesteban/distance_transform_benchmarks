@@ -7,7 +7,7 @@ namespace dt
 {
   __global__ static void block_propagation(const image2d_view<std::uint8_t>& img, image2d_view<float>& D, float v,
                                            float l_eucl, float l_grad, bool even, bool* active, bool* active_candidate,
-                                           bool* changed)
+                                           bool* changed, int* round_per_blocks)
   {
     const int bx  = blockIdx.x;
     const int by  = blockIdx.y;
@@ -15,6 +15,8 @@ namespace dt
 
     if (!active[bid])
       return;
+    if (round_per_blocks)
+      round_per_blocks[bid] += 1;
 
     const int x = bx * BLOCK_SIZE;
     const int y = by * BLOCK_SIZE + threadIdx.x;
@@ -111,7 +113,7 @@ namespace dt
 
   void generalised_distance_transform_blocks(const image2d_view<std::uint8_t>& img,
                                              const image2d_view<std::uint8_t>& mask, image2d_view<float>& D,
-                                             float lambda, float v)
+                                             float lambda, float v, int* round_per_blocks)
   {
     assert(img.width() == D.width() && img.height() == D.height() && img.width() == mask.width() &&
            img.height() == mask.height());
@@ -154,7 +156,8 @@ namespace dt
     while (*changed)
     {
       *changed = false;
-      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, even, active[even], active[!even], changed);
+      block_propagation<<<grid_dim, block_dim>>>(img, D, v, l_eucl, l_grad, even, active[even], active[!even], changed,
+                                                 round_per_blocks);
       even = !even;
       cudaDeviceSynchronize();
     }
@@ -170,12 +173,13 @@ namespace dt
   }
 
   image2d<float> generalised_distance_transform_blocks(const image2d_view<std::uint8_t>& img,
-                                                       const image2d_view<std::uint8_t>& mask, float lambda, float v)
+                                                       const image2d_view<std::uint8_t>& mask, float lambda, float v,
+                                                       int* round_per_blocks)
   {
     assert(img.width() == mask.width() && img.height() == mask.height());
     assert(img.memory_kind() == e_memory_kind::GPU && mask.memory_kind() == e_memory_kind::GPU);
     image2d<float> D(img.width(), img.height(), e_memory_kind::GPU);
-    generalised_distance_transform_blocks(img, mask, D, lambda, v);
+    generalised_distance_transform_blocks(img, mask, D, lambda, v, round_per_blocks);
     return D;
   }
 } // namespace dt
