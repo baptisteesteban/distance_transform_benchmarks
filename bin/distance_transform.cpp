@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   }
   else
   {
-    dt::fill(mask, std::uint8_t(1));
+    dt::fill(mask, std::uint8_t(0));
     mask(img.width() / 2, img.height() / 2) = 1;
   }
   const float lambda = std::atof(argv[2]);
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
   const auto d_img   = dt::host_to_device(img);
   const auto d_mask  = dt::host_to_device(mask);
-  const auto d_dist  = dt::generalised_distance_transform_task(d_img, d_mask, lambda);
+  const auto d_dist  = dt::generalised_distance_transform(d_img, d_mask, lambda);
   const auto dist    = dt::device_to_host(d_dist);
   const auto norm    = dt::normalize<std::uint8_t>(dist);
   const auto colored = dt::inferno(norm);
