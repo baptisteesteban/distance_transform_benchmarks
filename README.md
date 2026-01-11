@@ -1,7 +1,12 @@
 # Distance Transform benchmark
 
-This repository is currently in development in order to provide a benchmark on
-distance transform.
+This repository contains the source code to compute the generalised geodesic
+distance transform on GPU.
+
+**NB: This source code requires at least CUDA Drivers 12.8.**. In order to run
+it, it is recommended to use the
+[devcontainer](https://code.visualstudio.com/docs/devcontainers/containers)
+provided with the source code.
 
 ## How to use it
 
